@@ -1,6 +1,17 @@
-import { TabPlaceholder } from '@/features/navigation/TabPlaceholder';
+import { router } from 'expo-router';
 
-/** TEMPORARY: tab shell until this screen is built from the designs. */
+import { toast } from '@/components';
+import { CasesList } from '@/features/cases/CasesList';
+import { useCases } from '@/features/cases/data';
+
 export default function CasesRoute() {
-  return <TabPlaceholder title="Cases" message="Your support cases will appear here." />;
+  const { data, isSample } = useCases();
+  return (
+    <CasesList
+      cases={data}
+      isSample={isSample}
+      onNewCase={() => toast.show('Raising new cases is coming soon.')}
+      onOpenCase={(id) => router.push({ pathname: '/case/[id]', params: { id } })}
+    />
+  );
 }

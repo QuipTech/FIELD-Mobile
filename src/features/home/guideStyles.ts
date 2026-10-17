@@ -9,15 +9,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
   },
-  skip: {
-    position: 'absolute',
-    right: spacing.md,
-    minWidth: layout.minTapTarget,
-    minHeight: layout.minTapTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skipText: { color: colors.onAccent, opacity: 0.85 },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 20,
@@ -67,5 +58,16 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   nextPressed: { backgroundColor: colors.brandDeep },
+  // Quiet text button beside Next; hidden on the last step, where Get started also closes.
+  skip: {
+    minWidth: layout.minTapTarget,
+    minHeight: layout.minTapTarget,
+    paddingHorizontal: spacing.sm,
+    marginRight: spacing.xxs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skipPressed: { opacity: 0.6 },
+  skipText: { fontFamily: fontFamily.medium },
   nextLabel: { fontFamily: fontFamily.medium, fontSize: 16, color: colors.onAccent },
 });

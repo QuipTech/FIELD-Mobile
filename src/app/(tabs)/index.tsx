@@ -1,13 +1,10 @@
 import { router } from 'expo-router';
 
 import { initials, useCurrentUser } from '@/auth/useCurrentUser';
-import { toast } from '@/components';
 import { greeting, useHomeData } from '@/features/home/data';
 import { usePortalGuide } from '@/features/home/guideStorage';
 import { Home } from '@/features/home/Home';
 import { PortalGuide } from '@/features/home/PortalGuide';
-
-const comingSoon = (what: string) => () => toast.show(`${what} is coming soon.`);
 
 export default function HomeRoute() {
   const { data: user } = useCurrentUser();
@@ -24,13 +21,13 @@ export default function HomeRoute() {
         bottomInset={0}
         onSearch={() => router.navigate('/machines')}
         onAskAi={() => router.navigate('/ask-ai')}
-        onScan={comingSoon('Scanning assets')}
-        onLogEntry={comingSoon('Logging entries')}
-        onCapture={comingSoon('Capture')}
-        onNotifications={comingSoon('Notifications')}
+        onScan={() => router.push('/scan')}
+        onLogEntry={() => router.push('/capture')}
+        onCapture={() => router.push('/capture')}
+        onNotifications={() => router.push('/notifications')}
         onProfile={() => router.navigate('/me')}
         onSeeAll={() => router.navigate('/machines')}
-        onOpenMachine={comingSoon('Machine details')}
+        onOpenMachine={(id) => router.push({ pathname: '/machine/[id]', params: { id } })}
       />
       <PortalGuide visible={guide.visible} onDone={guide.dismiss} />
     </>

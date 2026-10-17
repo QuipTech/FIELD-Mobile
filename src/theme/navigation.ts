@@ -21,3 +21,9 @@ export const authHeaderOptions = (title: string): NativeStackNavigationOptions =
   headerTitleStyle: { fontFamily: fontFamily.medium, fontSize: 16, color: colors.ink },
   contentStyle: { backgroundColor: colors.surface },
 });
+
+/** The same white header for signed-in screens pushed over the tabs, on the app canvas. */
+export const detailHeaderOptions = (title: string): NativeStackNavigationOptions => ({
+  ...authHeaderOptions(title),
+  contentStyle: { backgroundColor: colors.canvas },
+});

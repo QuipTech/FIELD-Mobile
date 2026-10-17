@@ -31,6 +31,7 @@ const fill = async (overrides: Record<string, string> = {}) => {
     'Work email': 'sam@quiptech.com.au',
     'Phone number': '+61 400 123 456',
     Password: 'Str0ng!pass',
+    'Confirm password': 'Str0ng!pass',
     ...overrides,
   };
   for (const [label, value] of Object.entries(values)) {
@@ -75,8 +76,18 @@ describe('Register', () => {
       email: 'sam@quiptech.com.au',
       phone: '+61400123456', // normalised to E.164 for Cognito
       password: 'Str0ng!pass',
+      confirmPassword: 'Str0ng!pass',
       acceptTerms: true,
     });
+  });
+
+  it('requires the passwords to match', async () => {
+    const props = await setup();
+    await fill({ 'Confirm password': 'Str0ng!pas' });
+    await fireEvent.press(screen.getByRole('checkbox'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText("Passwords don't match")).toBeTruthy();
+    expect(props.onSubmit).not.toHaveBeenCalled();
   });
 
   it('links back to sign in', async () => {

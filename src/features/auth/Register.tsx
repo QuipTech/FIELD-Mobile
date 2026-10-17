@@ -36,6 +36,7 @@ export function Register({ onSubmit, onGoogle, onApple, onSignIn }: RegisterProp
       email: '',
       phone: '',
       password: '',
+      confirmPassword: '',
       acceptTerms: false,
     },
   });
@@ -71,6 +72,12 @@ export function Register({ onSubmit, onGoogle, onApple, onSignIn }: RegisterProp
 }
 
 type FormControl = Control<RegisterInput, unknown, RegisterValues>;
+
+/** Both password fields opt in to iOS strong-password suggestions. */
+const newPasswordAutofill = {
+  autoComplete: 'new-password',
+  textContentType: 'newPassword',
+} as const;
 
 function RegisterFields({
   control,
@@ -141,8 +148,14 @@ function RegisterFields({
       <PasswordField
         control={control}
         name="password"
-        autoComplete="new-password"
-        textContentType="newPassword"
+        {...newPasswordAutofill}
+        {...next('confirmPassword')}
+      />
+      <PasswordField
+        control={control}
+        name="confirmPassword"
+        label="Confirm password"
+        {...newPasswordAutofill}
         returnKeyType="done"
       />
     </>

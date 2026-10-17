@@ -20,15 +20,21 @@ export const styles = StyleSheet.create({
   link: { minHeight: layout.minTapTarget, justifyContent: 'center' },
 
   // Register (M1b)
-  registerScroll: { flexGrow: 1, gap: spacing.sm, padding: spacing.md },
-  nameRow: { flexDirection: 'row', gap: 10 },
+  // Same 28pt gutter and 14pt rhythm as Sign in; centred in the space below the header.
+  registerScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: 14,
+    paddingHorizontal: 28,
+    paddingTop: spacing.lg,
+  },
+  nameRow: { flexDirection: 'row', gap: 14 },
   nameField: { flex: 1 },
   checkRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.xs,
     minHeight: layout.minTapTarget,
-    paddingTop: spacing.xs,
   },
   checkbox: {
     width: 18,
@@ -72,53 +78,4 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: -spacing.xs,
   },
-
-  // Decorative shapes (rotation is animated in Decorations.tsx; positions in shapePlacements).
-  shapeOutline: {
-    position: 'absolute',
-    width: 46,
-    height: 46,
-    borderWidth: 1.5,
-    borderColor: colors.brandTintStrong,
-    borderRadius: 10,
-  },
-  shapeDot: {
-    position: 'absolute',
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.amberTint,
-    opacity: 0.8,
-  },
-  shapeTile: {
-    position: 'absolute',
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    backgroundColor: colors.brandTint,
-  },
 });
-
-/**
- * Where the decorative shapes sit on each screen. Sign in follows the M1 design; the others keep
- * them in each screen's open space so form controls never hide them. Two-factor (M1f) reuses
- * `register`, as both have their form at the top.
- */
-export const shapePlacements = {
-  signIn: {
-    outline: { top: 26, right: 34 },
-    dot: { top: 78, left: 26 },
-    tile: { bottom: 150, right: 20 },
-  },
-  register: {
-    outline: { bottom: 120, left: 30 },
-    dot: { bottom: 200, right: 56 },
-    tile: { bottom: 48, right: 26 },
-  },
-  // M1c–M1e: either side of the header, plus the open middle between header and form.
-  step: {
-    outline: { top: 30, right: 34 },
-    dot: { top: 96, left: 28 },
-    tile: { top: '42%', right: 40 },
-  },
-} as const;

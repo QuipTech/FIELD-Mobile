@@ -40,3 +40,34 @@ describe('app launch', () => {
     expect(await screen.findByText('Machine history, manuals and AI in the pit')).toBeTruthy();
   });
 });
+
+describe('signed-in screens', () => {
+  beforeEach(() => mockGetCurrentUser.mockResolvedValue({ userId: 'u1', username: 'u1' }));
+
+  it.each([
+    ['/me', 'Offline downloads'],
+    ['/cases', "Brake pressure alarm won't clear"],
+    ['/billing', '3,140 / 4,000 queries'],
+    ['/upgrade', 'Continue to Stripe checkout'],
+    ['/help', 'How do I work offline in the pit?'],
+    ['/help/pending-sync', 'Why is my entry stuck "pending sync"?'],
+    ['/machine-history', 'Main hydraulic pump replaced'],
+    ['/ai-history', 'Show me the drill rod change procedure'],
+    ['/case/1042', 'Raised from AI assistant conversation.'],
+    ['/notifications', 'Manual update available'],
+    ['/notifications/n-2204', 'Open case #1042'],
+    ['/machines', 'CAT 793F · Bench 3 · 14,208 h'],
+    ['/machine/HT-2201', 'S/N 4GZ01288'],
+    ['/machine/HT-2201/history', 'E-2204 · accumulator pre-charge low'],
+    ['/machine/HT-2201/configuration', 'Hydraulic pump: 4T-9410 → 4T-9455'],
+    ['/machine/HT-2201/manuals', 'Rear suspension cylinder recharge'],
+    ['/machine/XX-0000', 'Machine not found'],
+    ['/ask-ai', 'Log as entry'],
+    ['/scan', 'Scan asset tag'],
+    ['/capture', 'Step 1 of 3 · Details'],
+    ['/document/rear-suspension-recharge', 'Prerequisites'],
+  ])('opens %s', async (url, text) => {
+    await renderRouter('src/app', { initialUrl: url });
+    expect(await screen.findByText(text)).toBeTruthy();
+  });
+});

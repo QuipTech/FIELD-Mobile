@@ -1,86 +1,86 @@
 import { useEffect, useState } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+
+import { useMotionAllowed } from '@/lib/motion';
 import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+  plusBar,
+  shapePlacements,
+  shapeStyle,
+  type ShapePlacement,
+  type ShapeSpec,
+} from './decorationShapes';
 
-import { shapePlacements, styles } from './styles';
-
-/** Drift: [dx, dy] at the peak of each loop, plus degrees of extra rotation. */
-type Drift = { dx: number; dy: number; spin: number; duration: number; delay: number };
-
-const OUTLINE: Drift = { dx: -6, dy: 10, spin: 14, duration: 6000, delay: 0 };
-const DOT: Drift = { dx: 8, dy: -6, spin: 0, duration: 4800, delay: 600 };
-const TILE: Drift = { dx: -8, dy: -12, spin: -18, duration: 7000, delay: 1200 };
-
-/** Auth background shapes, floating gently. Static when Reduce Motion is on. */
-export function Decorations({
-  placement = 'signIn',
-}: {
-  placement?: keyof typeof shapePlacements;
-}) {
-  const at = shapePlacements[placement];
+/** Auth background shapes, wandering slowly. Static when Reduce Motion is on. */
+export function Decorations({ placement = 'signIn' }: { placement?: ShapePlacement }) {
+  const animate = useMotionAllowed();
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <FloatingShape style={[styles.shapeOutline, at.outline]} baseRotate={18} drift={OUTLINE} />
-      <FloatingShape style={[styles.shapeDot, at.dot]} baseRotate={0} drift={DOT} />
-      <FloatingShape style={[styles.shapeTile, at.tile]} baseRotate={30} drift={TILE} />
+      {shapePlacements[placement].map((spec, i) => (
+        <FloatingShape key={i} spec={spec} animate={animate} />
+      ))}
     </View>
   );
 }
 
-function FloatingShape({
-  style,
-  baseRotate,
-  drift,
-}: {
-  style: StyleProp<ViewStyle>;
-  baseRotate: number;
-  drift: Drift;
-}) {
-  const [progress] = useState(() => new Animated.Value(0));
-
+/** A 0 → 1 → 0 sine loop of `periodMs`, started after `delayMs` while `enabled`. */
+function useSwing(periodMs: number, delayMs: number, enabled: boolean) {
+  const [value] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    let loop: Animated.CompositeAnimation | undefined;
-    let cancelled = false;
-    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (reduce || cancelled) return;
-      const half = (toValue: number) =>
-        Animated.timing(progress, {
-          toValue,
-          duration: drift.duration / 2,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        });
-      loop = Animated.loop(Animated.sequence([half(1), half(0)]));
-      Animated.sequence([Animated.delay(drift.delay), loop]).start();
-    });
+    if (!enabled) return;
+    const half = (toValue: number) =>
+      Animated.timing(value, {
+        toValue,
+        duration: periodMs / 2,
+        easing: Easing.inOut(Easing.sin),
+        useNativeDriver: true,
+      });
+    const anim = Animated.sequence([
+      Animated.delay(delayMs),
+      Animated.loop(Animated.sequence([half(1), half(0)])),
+    ]);
+    anim.start();
     return () => {
-      cancelled = true;
-      loop?.stop();
-      progress.stopAnimation();
+      anim.stop();
+      value.setValue(0);
     };
-  }, [progress, drift]);
+  }, [value, periodMs, delayMs, enabled]);
+  return value;
+}
 
-  const range = (to: number) => progress.interpolate({ inputRange: [0, 1], outputRange: [0, to] });
-  const rotate = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [`${baseRotate}deg`, `${baseRotate + drift.spin}deg`],
-  });
+function FloatingShape({ spec, animate }: { spec: ShapeSpec; animate: boolean }) {
+  const { drift, rotate } = spec;
+  const x = useSwing(drift.periodMs, drift.delayMs, animate);
+  const y = useSwing(Math.round(drift.periodMs * 1.4), drift.delayMs, animate);
+
+  const transform = [
+    {
+      translateX: x.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, drift.dx],
+      }),
+    },
+    {
+      translateY: y.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, drift.dy],
+      }),
+    },
+    {
+      rotate: y.interpolate({
+        inputRange: [0, 1],
+        outputRange: [`${rotate}deg`, `${rotate + drift.spin}deg`],
+      }),
+    },
+  ];
 
   return (
-    <Animated.View
-      style={[
-        style,
-        {
-          transform: [{ translateX: range(drift.dx) }, { translateY: range(drift.dy) }, { rotate }],
-        },
-      ]}
-    />
+    <Animated.View style={[shapeStyle(spec), spec.at, { transform }]}>
+      {spec.kind === 'plus' && (
+        <>
+          <View style={plusBar(spec, false)} />
+          <View style={plusBar(spec, true)} />
+        </>
+      )}
+    </Animated.View>
   );
 }

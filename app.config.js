@@ -80,6 +80,15 @@ module.exports = ({ config }) => {
       'expo-secure-store',
       'expo-font',
       [
+        'expo-camera',
+        {
+          cameraPermission:
+            'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
+          // Photos only for now; no video recording, so no microphone on Android.
+          recordAudioAndroid: false,
+        },
+      ],
+      [
         'expo-splash-screen',
         // Logo card on brand violet; BrandSplash (src/features/splash) takes over seamlessly.
         { image: './assets/splash-icon.png', imageWidth: 144, backgroundColor: '#39279B' },

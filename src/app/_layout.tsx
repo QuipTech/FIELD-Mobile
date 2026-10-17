@@ -6,7 +6,33 @@ import { configureAmplify } from '@/auth/amplify';
 import { hydrateSession, listenForAuthEvents, useSession } from '@/auth/session';
 import { BrandSplash } from '@/features/splash/BrandSplash';
 import { AppProviders } from '@/providers/AppProviders';
-import { authHeaderOptions, stackScreenOptions, useAppFonts } from '@/theme';
+import { authHeaderOptions, detailHeaderOptions, stackScreenOptions, useAppFonts } from '@/theme';
+
+/** Signed-in screens pushed over the tabs (white header, back button, no tab bar). */
+const DETAIL_SCREENS = {
+  billing: 'Billing & subscription',
+  upgrade: 'Upgrade plan',
+  'machine-history': 'My machine history',
+  'ai-history': 'AI history',
+  'help/index': 'Help & support',
+  'help/[id]': 'FAQ',
+  'case/[id]': 'Case', // the screen sets "Case #1042" and its status pill
+  'notifications/index': 'Notifications',
+  'notifications/[id]': 'Notification',
+  // The machine screens set their titles, e.g. "History · HT-2201".
+  'machine/[id]/index': 'Machine',
+  'machine/[id]/history': 'History',
+  'machine/[id]/configuration': 'Configuration',
+  'machine/[id]/manuals': 'Manuals',
+  'document/[id]': 'Document',
+};
+
+/** Camera screens cover the whole app and draw their own top bar. */
+const CAMERA_SCREEN = {
+  headerShown: false,
+  presentation: 'fullScreenModal',
+  animation: 'slide_from_bottom',
+} as const;
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 configureAmplify();
@@ -34,6 +60,11 @@ export default function RootLayout() {
         <Stack screenOptions={stackScreenOptions}>
           <Stack.Protected guard={signedIn}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {Object.entries(DETAIL_SCREENS).map(([name, title]) => (
+              <Stack.Screen key={name} name={name} options={detailHeaderOptions(title)} />
+            ))}
+            <Stack.Screen name="scan" options={CAMERA_SCREEN} />
+            <Stack.Screen name="capture" options={CAMERA_SCREEN} />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />

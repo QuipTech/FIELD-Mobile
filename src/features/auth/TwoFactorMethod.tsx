@@ -38,7 +38,7 @@ export function TwoFactorMethod({ phone, email, onContinue }: TwoFactorMethodPro
 
   return (
     <View style={styles.root}>
-      <Decorations placement="register" />
+      <Decorations placement="twoFactor" />
       <ScrollView contentContainerStyle={[styles.mfaScroll, { paddingBottom: insets.bottom + 16 }]}>
         <Text variant="caption" color="inkMuted">
           Choose how you&apos;d like to receive your verification code

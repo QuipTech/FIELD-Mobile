@@ -47,6 +47,8 @@ export const colors = {
   brandTint: '#EDEBFA',
   brandTintStrong: '#D8D3F4',
   amberTint: '#FBF1DF',
+  tealTint: '#DDF3EF',
+  tealTintStrong: '#B9E6DE',
   // Home (M2) — status tones, tab bar, portal guide.
   amber: '#A96A06',
   amberBorder: '#EFDCB6',
@@ -56,6 +58,10 @@ export const colors = {
   fill: '#EEEFF2',
   guideScrim: 'rgba(20, 18, 40, 0.55)',
   onBrandFaint: 'rgba(255, 255, 255, 0.55)',
+  // Camera (M6) — dark capture surface.
+  camera: '#111014',
+  cameraViewfinder: '#1D1C24',
+  cameraLine: 'rgba(255, 255, 255, 0.18)',
 } as const;
 
 export const spacing = {
@@ -142,8 +148,15 @@ export const onboarding = {
   textMaxWidth: 300,
 } as const;
 
-/** Sheets are the only elevated surface. */
+/** Sheets, plus the soft lift under the M2+ rounded cards. */
 export const elevation = {
+  card: {
+    shadowColor: '#23211E',
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
   sheet: {
     shadowColor: '#000000',
     shadowOpacity: 0.12,

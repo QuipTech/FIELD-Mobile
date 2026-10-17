@@ -38,6 +38,8 @@ describe('PortalGuide', () => {
       expect(screen.getByText(GUIDE_STEPS[i]!.title)).toBeTruthy();
     }
     expect(onDone).not.toHaveBeenCalled();
+    // Get started closes the guide on the last step, so Skip is no longer offered.
+    expect(screen.queryByRole('button', { name: 'Skip guide' })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Get started' }));
     expect(onDone).toHaveBeenCalledTimes(1);
   });

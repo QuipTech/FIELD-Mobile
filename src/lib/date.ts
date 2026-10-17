@@ -26,6 +26,28 @@ export function formatDate(value: string | number | Date): string {
   return format(value, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** "15 Oct" — for lists where the year is obvious from context. */
+export function formatShortDate(value: string | number | Date): string {
+  return format(value, { day: 'numeric', month: 'short' });
+}
+
+/** "2:30 pm" */
+export function formatTime(value: string | number | Date): string {
+  return format(value, { hour: 'numeric', minute: '2-digit' });
+}
+
+/** "Today, 2:30 pm", "Yesterday", "3 days ago", then falls back to formatDate. */
+export function formatDayRelative(value: string | number | Date, now = new Date()): string {
+  const date = toDate(value);
+  if (!date) return '—';
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000);
+  if (days === 0) return `Today, ${formatTime(date)}`;
+  if (days === 1) return 'Yesterday';
+  if (days > 1 && days < 7) return `${days} days ago`;
+  return formatDate(date);
+}
+
 /** "15 Oct 2026, 2:30 pm" */
 export function formatDateTime(value: string | number | Date): string {
   return format(value, {

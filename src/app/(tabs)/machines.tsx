@@ -1,8 +1,21 @@
-import { TabPlaceholder } from '@/features/navigation/TabPlaceholder';
+import { router } from 'expo-router';
 
-/** TEMPORARY: tab shell until this screen is built from the designs. */
+import { toast } from '@/components';
+import { useMachines } from '@/features/machines/data';
+import { MachinesList } from '@/features/machines/MachinesList';
+import { useMeData } from '@/features/me/data';
+
 export default function MachinesRoute() {
+  const { data, isSample } = useMachines();
+  const { data: me } = useMeData();
   return (
-    <TabPlaceholder title="Machines" message="Your fleet and assigned machines will appear here." />
+    <MachinesList
+      machines={data}
+      homeSite={me.site}
+      isSample={isSample}
+      onScan={() => router.push('/scan')}
+      onNearMe={() => toast.show('Sorting by distance is coming soon.')}
+      onOpenMachine={(id) => router.push({ pathname: '/machine/[id]', params: { id } })}
+    />
   );
 }

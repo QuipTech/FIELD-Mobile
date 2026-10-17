@@ -1,4 +1,4 @@
-import { formatRelative, isFutureDay } from '../date';
+import { formatDayRelative, formatRelative, formatShortDate, isFutureDay } from '../date';
 import { formatBytes, formatHours } from '../format';
 import { cleanLine, cleanText } from '../sanitize';
 
@@ -25,6 +25,14 @@ describe('date', () => {
   it('formats relative times', () => {
     expect(formatRelative(now.getTime() - 5 * 60_000, now.getTime())).toBe('5 min ago');
     expect(formatRelative(now.getTime() - 3 * 3_600_000, now.getTime())).toBe('3 h ago');
+  });
+
+  it('formats short dates and day-relative times', () => {
+    expect(formatShortDate('2026-03-12T12:00:00')).toBe('12 Mar');
+    expect(formatDayRelative('2026-10-15T09:12:00', now)).toMatch(/^Today, 9:12\sam$/);
+    expect(formatDayRelative('2026-10-14T23:30:00', now)).toBe('Yesterday');
+    expect(formatDayRelative('2026-10-11T08:00:00', now)).toBe('4 days ago');
+    expect(formatDayRelative('2026-09-30T08:00:00', now)).toBe('30 Sept 2026');
   });
 });
 

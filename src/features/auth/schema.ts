@@ -35,24 +35,30 @@ const required = (what: string) =>
     .trim()
     .min(1, { error: `Enter your ${what}` });
 
-export const registerSchema = z.object({
-  firstName: required('first name'),
-  lastName: required('last name'),
-  // TODO(confirm): the user pool has no company attribute yet (needs `custom:company`), so this
-  // is validated but not sent to Cognito.
-  company: required('company name'),
-  email,
-  phone: z
-    .string()
-    .transform(toE164)
-    .pipe(
-      z.string().regex(/^\+[1-9]\d{7,14}$/, {
-        error: 'Include your country code, e.g. +61 400 123 456',
-      }),
-    ),
-  password: newPassword,
-  acceptTerms: z.boolean().refine((v) => v, { error: 'Accept the terms to continue' }),
-});
+export const registerSchema = z
+  .object({
+    firstName: required('first name'),
+    lastName: required('last name'),
+    // TODO(confirm): the user pool has no company attribute yet (needs `custom:company`), so this
+    // is validated but not sent to Cognito.
+    company: required('company name'),
+    email,
+    phone: z
+      .string()
+      .transform(toE164)
+      .pipe(
+        z.string().regex(/^\+[1-9]\d{7,14}$/, {
+          error: 'Include your country code, e.g. +61 400 123 456',
+        }),
+      ),
+    password: newPassword,
+    confirmPassword: z.string(),
+    acceptTerms: z.boolean().refine((v) => v, { error: 'Accept the terms to continue' }),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    error: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 
 export type RegisterInput = z.input<typeof registerSchema>;
 export type RegisterValues = z.output<typeof registerSchema>;

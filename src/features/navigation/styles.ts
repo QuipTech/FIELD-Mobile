@@ -22,7 +22,14 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
     elevation: 12,
   },
-  tab: { flex: 1, alignItems: 'center', gap: 5, minHeight: 48, justifyContent: 'flex-end' },
+  tab: { flex: 1, alignItems: 'center', gap: 4, minHeight: 52, justifyContent: 'flex-end' },
+  // Active tab: the icon sits in a soft violet pill.
+  iconWrap: { width: 56, height: 32, alignItems: 'center', justifyContent: 'center' },
+  indicator: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 16,
+    backgroundColor: colors.brandTint,
+  },
   label: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.inkSubtle },
   labelOn: { fontFamily: fontFamily.medium, color: colors.brandDeep },
   fabLabel: { marginTop: FAB - 24 + 4 },
@@ -40,6 +47,16 @@ export const styles = StyleSheet.create({
     shadowRadius: 11,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
+  },
+  // Soft halo behind the button; pulses with the float.
+  fabGlow: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    width: FAB + 16,
+    height: FAB + 16,
+    borderRadius: (FAB + 16) / 2,
+    backgroundColor: colors.brandGlowViolet,
   },
   // Clipped gradient + white ring; separate from `fab` so iOS keeps the drop shadow.
   fabClip: {

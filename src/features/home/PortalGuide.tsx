@@ -1,7 +1,6 @@
 import { ChevronRight, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { Text } from '@/components/Text/Text';
@@ -13,7 +12,6 @@ export type PortalGuideProps = { visible: boolean; onDone: () => void };
 
 /** M2b first-login guide: dimmed overlay with a step card. Skip or finish marks it seen. */
 export function PortalGuide({ visible, onDone }: PortalGuideProps) {
-  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const step = GUIDE_STEPS[index] ?? GUIDE_STEPS[0]!;
   const isLast = index === GUIDE_STEPS.length - 1;
@@ -29,17 +27,6 @@ export function PortalGuide({ visible, onDone }: PortalGuideProps) {
       onRequestClose={onDone}
     >
       <View style={styles.scrim}>
-        <Pressable
-          onPress={onDone}
-          style={[styles.skip, { top: insets.top + 40 }]}
-          accessibilityRole="button"
-          accessibilityLabel="Skip guide"
-        >
-          <Text variant="caption" style={styles.skipText}>
-            Skip
-          </Text>
-        </Pressable>
-
         <View style={styles.card}>
           <Hero />
           <View style={styles.iconTile}>
@@ -62,6 +49,18 @@ export function PortalGuide({ visible, onDone }: PortalGuideProps) {
                   <View key={s.key} style={[styles.dot, i === index && styles.dotActive]} />
                 ))}
               </View>
+              {!isLast && (
+                <Pressable
+                  onPress={onDone}
+                  style={({ pressed }) => [styles.skip, pressed && styles.skipPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip guide"
+                >
+                  <Text color="inkMuted" style={styles.skipText}>
+                    Skip
+                  </Text>
+                </Pressable>
+              )}
               <Pressable
                 onPress={() => (isLast ? onDone() : setIndex(index + 1))}
                 style={({ pressed }) => [styles.next, pressed && styles.nextPressed]}
