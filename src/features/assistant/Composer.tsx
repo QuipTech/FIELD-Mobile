@@ -1,25 +1,31 @@
-import { ArrowUp, Mic, Plus, X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Pressable, TextInput, View } from 'react-native';
 
 import { colors, layout } from '@/theme';
 import { styles } from './styles';
+import { useVoiceInput } from './useVoiceInput';
+import { VoiceButton } from './VoiceButton';
 
 export type ComposerProps = {
   value: string;
   onChange: (text: string) => void;
   onSend: (text: string) => void;
   onAttach: () => void;
-  onVoice: () => void;
   /** Photo waiting to go with the next question. */
   image?: { uri: string };
   onRemoveImage?: () => void;
 };
 
-/** "+" attach, the question box, then send (or voice while empty). */
-export function Composer({ value, onChange, onSend, onAttach, onVoice, ...props }: ComposerProps) {
+/** "+" attach, the question box, then send — or voice typing while the box is empty. */
+export function Composer({ value, onChange, onSend, onAttach, ...props }: ComposerProps) {
   const [focused, setFocused] = useState(false);
+  const voice = useVoiceInput(value, onChange);
   const text = value.trim();
+  const send = () => {
+    voice.cancel(); // a late result mustn't refill the box after sending
+    onSend(text);
+  };
   return (
     <View>
       {props.image && (
@@ -58,25 +64,18 @@ export function Composer({ value, onChange, onSend, onAttach, onVoice, ...props 
           onChangeText={onChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Ask…"
+          placeholder={voice.listening ? 'Listening… speak now' : 'Ask…'}
           placeholderTextColor={colors.inkSubtle}
           multiline
           maxFontSizeMultiplier={layout.maxFontScale}
-          style={[styles.input, focused && styles.inputFocused]}
+          style={[styles.input, (focused || voice.listening) && styles.inputFocused]}
           accessibilityLabel="Ask a question"
         />
-        <Pressable
-          onPress={() => (text ? onSend(text) : onVoice())}
-          style={({ pressed }) => [styles.send, pressed && styles.sendPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={text ? 'Send' : 'Ask by voice'}
-        >
-          {text ? (
-            <ArrowUp size={20} color={colors.onAccent} strokeWidth={2.5} />
-          ) : (
-            <Mic size={20} color={colors.onAccent} strokeWidth={2} />
-          )}
-        </Pressable>
+        {voice.listening ? (
+          <VoiceButton mode="stop" onPress={voice.stop} />
+        ) : (
+          <VoiceButton mode={text ? 'send' : 'voice'} onPress={text ? send : voice.start} />
+        )}
       </View>
     </View>
   );

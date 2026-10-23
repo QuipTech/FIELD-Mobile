@@ -32,3 +32,16 @@ jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock
 jest.mock('@gorhom/bottom-sheet', () => require('@gorhom/bottom-sheet/mock'));
 require('react-native-gesture-handler/jestSetup');
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+// Speech recognition is native only; tests drive it through src/test/mocks/speechRecognition.
+jest.mock('expo-speech-recognition', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('./src/test/mocks/speechRecognition'),
+);
+
+// Text-to-speech is native only.
+jest.mock('expo-speech', () => ({
+  maxSpeechInputLength: 4000,
+  speak: jest.fn(),
+  stop: jest.fn(async () => undefined),
+}));

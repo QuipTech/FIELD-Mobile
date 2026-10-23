@@ -1,8 +1,7 @@
-import { LifeBuoy, Plus } from 'lucide-react-native';
+import { LifeBuoy } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { BrandButton } from '@/components/BrandButton/BrandButton';
 import { BrandCard } from '@/components/BrandCard/BrandCard';
 import { Chip } from '@/components/Chip/Chip';
 import { EmptyPanel } from '@/components/EmptyPanel/EmptyPanel';
@@ -11,10 +10,8 @@ import { FilterSelect, type FilterOption } from '@/components/FilterChip/FilterC
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { Pill } from '@/components/Pill/Pill';
 import { SkeletonList } from '@/components/Skeleton/SkeletonList';
-import { TabHeader } from '@/components/TabHeader/TabHeader';
 import { Text } from '@/components/Text/Text';
 import { formatRelative } from '@/lib/date';
-import { colors } from '@/theme';
 import { PRIORITY_TONE, type CaseStatus, type SupportCase } from './data';
 import { styles } from './styles';
 
@@ -40,12 +37,11 @@ export type CasesListProps = {
   /** Shown instead of the list when there's nothing cached to show. */
   error?: unknown;
   onRetry?: () => void;
-  onNewCase: () => void;
   onOpenCase: (id: string) => void;
 };
 
-/** M11 Support / open cases (the Cases tab). */
-export function CasesList({ cases, isAdmin, onNewCase, onOpenCase, ...state }: CasesListProps) {
+/** M11 Support / open cases (opened from Me; the route's header has "New"). */
+export function CasesList({ cases, isAdmin, onOpenCase, ...state }: CasesListProps) {
   const [status, setStatus] = useState<StatusFilter>('open');
   const [machine, setMachine] = useState('all');
   const [triage, setTriage] = useState<AdminFilter>('all');
@@ -75,17 +71,6 @@ export function CasesList({ cases, isAdmin, onNewCase, onOpenCase, ...state }: C
   return (
     <View style={styles.root}>
       <MeshBackground spots={APP_MESH} />
-      <TabHeader
-        title="Cases"
-        right={
-          <BrandButton
-            label="New"
-            icon={<Plus size={18} color={colors.onAccent} strokeWidth={2.25} />}
-            onPress={onNewCase}
-            style={styles.newButton}
-          />
-        }
-      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.filters}>
           <FilterSelect

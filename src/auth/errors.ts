@@ -34,8 +34,10 @@ export function authErrorMessage(error: unknown): string {
       return /phone/i.test(message)
         ? 'Enter your phone number with its country code, e.g. +61 400 123 456.'
         : 'Some details are invalid. Check them and try again.';
+    case 'BiometricError':
     case 'ApiError':
-      // FIELD API (NestJS) messages are written for people, e.g. a phone format rule.
+      // Both are written for people: biometric sign-in (src/auth/biometrics.ts) and FIELD API
+      // (NestJS) messages, e.g. a phone format rule.
       return message || 'Something went wrong. Please try again.';
     default:
       return 'Something went wrong. Please try again.';

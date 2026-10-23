@@ -1,8 +1,7 @@
-import { Sparkles, Truck, X } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
+import { Sparkles } from 'lucide-react-native';
+import { useState } from 'react';
 import { View } from 'react-native';
 
-import { BrandButton } from '@/components/BrandButton/BrandButton';
 import { BrandCard } from '@/components/BrandCard/BrandCard';
 import { DetailScreen } from '@/components/DetailScreen/DetailScreen';
 import { EmptyPanel } from '@/components/EmptyPanel/EmptyPanel';
@@ -10,9 +9,8 @@ import { FilterChip } from '@/components/FilterChip/FilterChip';
 import { Pill, type PillTone } from '@/components/Pill/Pill';
 import { Segmented } from '@/components/Segmented/Segmented';
 import { Text } from '@/components/Text/Text';
-import { formatDayRelative } from '@/lib/date';
-import { colors } from '@/theme';
 import type { AiConversation, ReviewItem, ReviewReason, ReviewStatus } from './data';
+import { MyHistory } from './MyHistory';
 import { styles } from './styles';
 
 export type AiHistoryProps = {
@@ -75,59 +73,6 @@ export function AiHistory({
     );
   }
   return <MyHistory {...props} header={toggle} />;
-}
-
-function MyHistory({
-  conversations,
-  onOpen,
-  onClear,
-  header,
-}: Pick<AiHistoryProps, 'conversations' | 'onOpen' | 'onClear'> & { header: ReactNode }) {
-  if (conversations.length === 0) {
-    return (
-      <DetailScreen>
-        {header}
-        <EmptyPanel
-          icon={Sparkles}
-          title="No AI conversations yet"
-          message="Questions you ask Ask AI appear here so you can pick them up later."
-        />
-      </DetailScreen>
-    );
-  }
-
-  return (
-    <DetailScreen
-      footer={
-        <BrandButton
-          variant="outline"
-          label="Clear AI history"
-          icon={<X size={18} color={colors.ink} strokeWidth={2} />}
-          onPress={onClear}
-        />
-      }
-    >
-      {header}
-      {conversations.map((c) => {
-        const when = formatDayRelative(c.at);
-        return (
-          <BrandCard
-            key={c.id}
-            onPress={() => onOpen(c)}
-            accessibilityLabel={`${c.machine ? `${c.machine}, ` : ''}${when}: ${c.question}`}
-          >
-            <View style={styles.splitRow}>
-              {c.machine ? <Pill label={c.machine} tone="brand" icon={Truck} /> : <View />}
-              <Text variant="caption" color="inkSubtle">
-                {when}
-              </Text>
-            </View>
-            <Text style={styles.question}>{c.question}</Text>
-          </BrandCard>
-        );
-      })}
-    </DetailScreen>
-  );
 }
 
 /** AI4 admin review queue: answers flagged by safety, missing sources or user feedback. */

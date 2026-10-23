@@ -5,9 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { startAccessSync } from '@/auth/access';
 import { configureAmplify } from '@/auth/amplify';
 import { registerApiTokenProvider } from '@/auth/apiSession';
+import { startBiometricSync } from '@/auth/biometrics';
 import { signOutUser } from '@/auth/flows';
 import { runAuth } from '@/auth/runAuth';
 import { hydrateSession, listenForAuthEvents, useSession } from '@/auth/session';
+import { hydrateOnboarding, useOnboarding } from '@/features/onboarding/onboardingStorage';
 import { BrandSplash } from '@/features/splash/BrandSplash';
 import { startOutboxSync } from '@/offline/sync';
 import { AppProviders } from '@/providers/AppProviders';
@@ -15,7 +17,7 @@ import { hydrateThemePreference, useAppFonts, useNavigationOptions } from '@/the
 
 /** Signed-in screens pushed over the tabs (header with back button, no tab bar). */
 const DETAIL_SCREENS = {
-  profile: 'Profile',
+  cases: 'Cases',
   billing: 'Billing & plan',
   'offline-sync': 'Offline & sync',
   'ai-history': 'AI history',
@@ -64,27 +66,34 @@ function RootStack() {
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
   const status = useSession((s) => s.status);
+  const onboardingSeen = useOnboarding((s) => s.seen);
   const nav = useNavigationOptions();
-  // Wait for fonts, the theme setting and the stored session, so the first screen is right.
-  const ready = (loaded || !!error) && themeLoaded && status !== 'unknown';
+  // Wait for fonts, the theme setting, the onboarding flag and the stored session, so the first
+  // screen is right.
+  const ready =
+    (loaded || !!error) && themeLoaded && onboardingSeen !== null && status !== 'unknown';
 
   useEffect(() => {
     // API requests carry the API session's token; if it can't be renewed, sign out.
     registerApiTokenProvider(() => runAuth(signOutUser));
     hydrateThemePreference().finally(() => setThemeLoaded(true));
+    hydrateOnboarding();
     hydrateSession();
     const stopAccess = startAccessSync();
+    const stopBiometrics = startBiometricSync();
     const stopOutbox = startOutboxSync();
     const stopAuth = listenForAuthEvents();
     return () => {
       stopAccess();
+      stopBiometrics();
       stopOutbox();
       stopAuth();
     };
   }, []);
 
   // BrandSplash hides the native splash once laid out, then fades when ready.
-  // Signed-out users land on onboarding (first available screen when `index` is guarded).
+  // Signed-out users land on onboarding the first time, then on sign-in (the first available
+  // screen when `index` is guarded).
   return (
     <>
       {ready && (
@@ -102,10 +111,12 @@ function RootStack() {
             <Stack.Screen name="complete-profile" options={BARE} />
           </Stack.Protected>
           <Stack.Protected guard={status === 'signedOut'}>
-            <Stack.Screen name="onboarding" options={FADE} />
+            <Stack.Protected guard={!onboardingSeen}>
+              <Stack.Screen name="onboarding" options={FADE} />
+            </Stack.Protected>
             <Stack.Screen name="sign-in" options={FADE} />
             <Stack.Screen name="register" options={nav.authHeader('Create account')} />
-            <Stack.Screen name="forgot-password" options={BARE} />
+            <Stack.Screen name="forgot-password" options={nav.backOnly} />
             <Stack.Screen name="reset-code" options={BARE} />
             <Stack.Screen name="new-password" options={BARE} />
             <Stack.Screen name="verify-email" options={BARE} />

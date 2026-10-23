@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScanFace, User } from 'lucide-react-native';
+import { FingerprintPattern, ScanFace, User } from 'lucide-react-native';
 import { useForm } from 'react-hook-form';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { BiometricSupport } from '@/auth/biometrics';
 import { BrandButton } from '@/components/BrandButton/BrandButton';
 import { Text } from '@/components/Text/Text';
 import { colors } from '@/theme';
@@ -19,12 +20,15 @@ export type SignInProps = {
   onSubmit: (values: SignInValues) => Promise<void>;
   onGoogle: () => void;
   onApple: () => void;
+  /** Face ID / fingerprint button; omitted hides it. */
+  biometric?: BiometricSupport;
+  biometricBusy?: boolean;
   onBiometric: () => void;
   onCreateAccount: () => void;
   onForgotPassword: () => void;
+  /** App version shown small at the bottom, e.g. "1.0.0". */
+  version?: string;
 };
-
-const BIOMETRIC_LABEL = Platform.OS === 'ios' ? 'Sign in with Face ID' : 'Sign in with biometrics';
 
 /** M1 Sign in — social sign-in, work email + password, and biometric re-entry. */
 export function SignIn(props: SignInProps) {
@@ -42,6 +46,8 @@ export function SignIn(props: SignInProps) {
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Equal spacers keep the form centred while the version sits at the bottom. */}
+        <View style={styles.grow} />
         <Image
           source={logo}
           style={styles.logo}
@@ -55,17 +61,24 @@ export function SignIn(props: SignInProps) {
         <View style={styles.form}>
           <SocialButtons onGoogle={props.onGoogle} onApple={props.onApple} />
           <EmailForm onSubmit={props.onSubmit} />
-          <BrandButton
-            variant="outline"
-            label={BIOMETRIC_LABEL}
-            icon={<ScanFace size={20} color={colors.ink} strokeWidth={2} />}
-            onPress={props.onBiometric}
-          />
+          {props.biometric && (
+            <BiometricButton
+              biometric={props.biometric}
+              loading={props.biometricBusy}
+              onPress={props.onBiometric}
+            />
+          )}
           <FooterLinks
             onCreateAccount={props.onCreateAccount}
             onForgotPassword={props.onForgotPassword}
           />
         </View>
+        <View style={styles.grow} />
+        {props.version ? (
+          <Text variant="caption" color="inkSubtle" style={styles.version}>
+            Version {props.version}
+          </Text>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -102,6 +115,27 @@ function EmailForm({ onSubmit }: Pick<SignInProps, 'onSubmit'>) {
       />
       <BrandButton label="Sign in" onPress={submit} loading={formState.isSubmitting} />
     </>
+  );
+}
+
+function BiometricButton({
+  biometric,
+  loading,
+  onPress,
+}: {
+  biometric: BiometricSupport;
+  loading?: boolean;
+  onPress: () => void;
+}) {
+  const Icon = biometric.kind === 'face' ? ScanFace : FingerprintPattern;
+  return (
+    <BrandButton
+      variant="outline"
+      label={`Sign in with ${biometric.label}`}
+      icon={<Icon size={20} color={colors.ink} strokeWidth={2} />}
+      loading={loading}
+      onPress={onPress}
+    />
   );
 }
 

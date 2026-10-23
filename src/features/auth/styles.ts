@@ -18,6 +18,8 @@ export const styles = StyleSheet.create({
   orLine: { flex: 1, height: 1, backgroundColor: colors.divider },
   links: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
   link: { minHeight: layout.minTapTarget, justifyContent: 'center' },
+  grow: { flexGrow: 1 },
+  version: { fontSize: 11, lineHeight: 14, textAlign: 'center' },
 
   // Register (M1b)
   // Same 28pt gutter and 14pt rhythm as Sign in; centred in the space below the header.

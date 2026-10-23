@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { renderRouter, screen } from 'expo-router/testing-library';
 
 import { useSession } from '@/auth/session';
@@ -40,6 +41,18 @@ describe('app launch', () => {
     expect(await screen.findByText('Every machine, one scan away')).toBeTruthy();
   });
 
+  it('skips onboarding once it has been seen on this device', async () => {
+    mockGetCurrentUser.mockRejectedValue(new Error('UserUnAuthenticatedException'));
+    await AsyncStorage.setItem('onboardingSeen', '2026-10-23T00:00:00.000Z');
+    try {
+      await renderRouter('src/app', { initialUrl: '/' });
+      expect(await screen.findByText('Machine history, manuals and AI in the pit')).toBeTruthy();
+      expect(screen.queryByText('Every machine, one scan away')).toBeNull();
+    } finally {
+      await AsyncStorage.removeItem('onboardingSeen');
+    }
+  });
+
   it('opens Home when a session is restored', async () => {
     mockGetCurrentUser.mockResolvedValue({ userId: 'u1', username: 'u1' });
     await renderRouter('src/app', { initialUrl: '/' });
@@ -74,7 +87,7 @@ describe('signed-in screens', () => {
   beforeEach(() => mockGetCurrentUser.mockResolvedValue({ userId: 'u1', username: 'u1' }));
 
   it.each([
-    ['/profile', 'Offline downloads'],
+    ['/me', 'Offline downloads'],
     ['/knowledge', 'Your brands'],
     ['/knowledge/brand/cat', 'Machine maintenance'],
     ['/knowledge/brand/nope', 'You do not have access to this content'],

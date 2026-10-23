@@ -1,5 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
+import { forgetBiometricSignIn } from '@/auth/biometrics';
 import { authErrorMessage, isAuthError } from '@/auth/errors';
 import { useAuthFlow } from '@/auth/flowStore';
 import { completeNewPassword, completePasswordReset } from '@/auth/flows';
@@ -26,6 +27,7 @@ export default function NewPasswordRoute() {
   const submit = async ({ password }: { password: string }) => {
     try {
       await completePasswordReset(email, code, password);
+      await forgetBiometricSignIn(email); // its saved password is the old one
       reset();
       toast.success('Password updated. Sign in with your new password.');
       router.dismissTo('/sign-in');

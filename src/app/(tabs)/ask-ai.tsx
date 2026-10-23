@@ -1,11 +1,12 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useRole } from '@/auth/useRole';
 import { NoAccess, toast } from '@/components';
 import { AskAi, NO_MACHINE } from '@/features/assistant/AskAi';
 import { useAttachedImage } from '@/features/assistant/attachImage';
 import { toAiUsage } from '@/features/assistant/data';
+import { stopSpeaking } from '@/features/assistant/speaker';
 import { useAiUsageReport } from '@/features/assistant/usage';
 import { useAskAi } from '@/features/assistant/useAskAi';
 import { openDoc } from '@/features/knowledge/navigation';
@@ -27,6 +28,8 @@ export default function AskAiRoute() {
   const chat = useAskAi();
   const [machineId, setMachineId] = useState(params.machine ?? NO_MACHINE);
   const photo = useAttachedImage(toast.show);
+  // Leaving the chat (another tab, a pushed screen) stops any answer being read aloud.
+  useFocusEffect(useCallback(() => () => void stopSpeaking(), []));
 
   // "Ask AI" from a machine page switches the context to that machine and starts a new thread.
   const [lastMachine, setLastMachine] = useState(params.machine);
@@ -74,7 +77,6 @@ export default function AskAiRoute() {
       onAttach={photo.attach}
       image={photo.image}
       onRemoveImage={photo.clear}
-      onVoice={() => toast.show('Voice questions are coming soon.')}
       onOpenCitation={(c) =>
         c.documentId
           ? openDoc(c.documentId, c.page, c.sectionId)

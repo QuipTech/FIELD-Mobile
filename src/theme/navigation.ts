@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, type NativeStackNavigationOptions } from 'expo-router';
 import { useMemo } from 'react';
+import { Platform } from 'react-native';
 
 import { palettes, type ColorScheme } from './palette';
 import { fontFamily } from './tokens';
@@ -30,6 +31,8 @@ export type NavigationOptions = {
   header: (title: string) => NativeStackNavigationOptions;
   /** Same bar over a card-coloured screen (auth forms). */
   authHeader: (title: string) => NativeStackNavigationOptions;
+  /** iOS: only a back chevron, top left, over the screen. Android: no bar (system back). */
+  backOnly: NativeStackNavigationOptions;
 };
 
 /** Header and stack options for the active scheme. */
@@ -55,6 +58,13 @@ export function useNavigationOptions(): NavigationOptions {
       },
       header,
       authHeader: (title) => ({ ...header(title), contentStyle: { backgroundColor: c.card } }),
+      backOnly: {
+        ...header(''),
+        headerShown: Platform.OS === 'ios',
+        headerTransparent: true,
+        headerShadowVisible: false,
+        headerStyle: undefined,
+      },
     };
     // `scheme` keys the memo; `c` is derived from it.
     // eslint-disable-next-line react-hooks/exhaustive-deps

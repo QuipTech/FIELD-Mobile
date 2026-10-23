@@ -1,10 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import * as Speech from 'expo-speech';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { type Machine } from '@/features/machines/data';
 import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { AskAi, type AskAiProps } from '../AskAi';
 import { SAMPLE_THREAD, SAMPLE_USAGE } from '@/test/fixtures/assistant';
+import { emitSpeech } from '@/test/mocks/speechRecognition';
 import type { ChatMessage } from '../data';
 
 const metrics = {
@@ -26,7 +29,6 @@ const setup = async (messages: ChatMessage[] = SAMPLE_THREAD, prompt?: string, i
     onNewChat: jest.fn(),
     onHistory: jest.fn(),
     onAttach: jest.fn(),
-    onVoice: jest.fn(),
     onOpenCitation: jest.fn(),
     onLogEntry: jest.fn(),
     onRaiseCase: jest.fn(),
@@ -59,10 +61,37 @@ describe('AskAi', () => {
     expect(props.onLogEntry).toHaveBeenCalledTimes(1);
   });
 
+  it('reads an answer aloud, and stops it', async () => {
+    await setup();
+    const [listen] = screen.getAllByRole('button', { name: 'Read the answer aloud' });
+    await fireEvent.press(listen!);
+    expect(Speech.speak).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Stop reading the answer' }));
+    expect(Speech.stop).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Stop reading the answer' })).toBeNull();
+  });
+
+  it('types what is said, live, and stops on request', async () => {
+    await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ask by voice' }));
+    expect(ExpoSpeechRecognitionModule.start).toHaveBeenCalledWith(
+      expect.objectContaining({ interimResults: true }),
+    );
+    await act(() => emitSpeech('start'));
+    expect(screen.getByPlaceholderText('Listening… speak now')).toBeTruthy();
+    await act(() =>
+      emitSpeech('result', { isFinal: false, results: [{ transcript: 'torque for wheel nuts' }] }),
+    );
+    expect(screen.getByLabelText('Ask a question').props.value).toBe('torque for wheel nuts');
+    await fireEvent.press(screen.getByRole('button', { name: 'Stop voice typing' }));
+    expect(ExpoSpeechRecognitionModule.stop).toHaveBeenCalled();
+    await act(() => emitSpeech('end'));
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+  });
+
   it('sends a typed question, or offers voice when empty', async () => {
     const props = await setup();
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask by voice' }));
-    expect(props.onVoice).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Ask by voice' })).toBeTruthy();
 
     await fireEvent.changeText(
       screen.getByLabelText('Ask a question'),

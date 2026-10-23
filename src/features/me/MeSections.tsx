@@ -4,12 +4,16 @@ import {
   Compass,
   CreditCard,
   Download,
+  FingerprintPattern,
   Globe,
+  LifeBuoy,
   LogOut,
   Sparkles,
+  ScanFace,
   Users,
 } from 'lucide-react-native';
 
+import type { BiometricSupport } from '@/auth/biometrics';
 import { GroupedList, GroupedRow } from '@/components/GroupedList/GroupedList';
 import { Text } from '@/components/Text/Text';
 import { formatNumber } from '@/lib/format';
@@ -17,7 +21,15 @@ import type { MeData, TeamSummary } from './data';
 import { styles } from './styles';
 
 export type MeDestination =
-  'billing' | 'team' | 'downloads' | 'sync' | 'language' | 'aiHistory' | 'replayGuide' | 'signOut';
+  | 'billing'
+  | 'team'
+  | 'cases'
+  | 'downloads'
+  | 'sync'
+  | 'language'
+  | 'aiHistory'
+  | 'replayGuide'
+  | 'signOut';
 
 export type MeSectionsProps = {
   data: MeData;
@@ -27,6 +39,8 @@ export type MeSectionsProps = {
   team?: TeamSummary;
   notificationsOn: boolean;
   onToggleNotifications: (on: boolean) => void;
+  /** Face ID / fingerprint sign-in; omitted when the device has no enrolled biometrics. */
+  biometric?: { support: BiometricSupport; on: boolean; onToggle: (on: boolean) => void };
   onNavigate: (to: MeDestination) => void;
 };
 
@@ -39,6 +53,7 @@ export function MeSections({
   team,
   notificationsOn,
   onToggleNotifications,
+  biometric,
   onNavigate,
 }: MeSectionsProps) {
   const go = (to: MeDestination) => () => onNavigate(to);
@@ -47,6 +62,19 @@ export function MeSections({
   return (
     <>
       <AccountSection data={data} isAdmin={isAdmin} team={team} onNavigate={onNavigate} />
+
+      {biometric && (
+        <>
+          <SectionLabel>Security</SectionLabel>
+          <GroupedList>
+            <GroupedRow
+              icon={biometric.support.kind === 'face' ? ScanFace : FingerprintPattern}
+              label={`Sign in with ${biometric.support.label}`}
+              toggle={{ value: biometric.on, onChange: biometric.onToggle }}
+            />
+          </GroupedList>
+        </>
+      )}
 
       <SectionLabel>Offline & preferences</SectionLabel>
       <GroupedList>
@@ -74,6 +102,7 @@ export function MeSections({
 
       <SectionLabel>Activity</SectionLabel>
       <GroupedList>
+        <GroupedRow icon={LifeBuoy} label="Support cases" onPress={go('cases')} />
         <GroupedRow icon={Sparkles} label="AI history" onPress={go('aiHistory')} />
       </GroupedList>
 

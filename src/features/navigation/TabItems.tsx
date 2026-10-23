@@ -1,24 +1,35 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Animated, Pressable, View } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { Text } from '@/components/Text/Text';
-import { colors } from '@/theme';
-import { styles } from './styles';
+import { scales, springs, useReducedMotion, useTheme } from '@/theme';
+import { useStyles } from './styles';
 
-type TabProps = { label: string; focused: boolean; onPress: () => void };
+type TabProps = { label: string; icon: LucideIcon; focused: boolean; onPress: () => void };
 
-/** A regular tab: the icon sits in a soft pill that springs in when the tab is selected. */
-export function TabItem({ label, icon: Icon, focused, onPress }: TabProps & { icon: LucideIcon }) {
-  const [on] = useState(() => new Animated.Value(focused ? 1 : 0));
+/** A regular tab: the icon pops when selected; the sliding pill behind it lives in TabBar. */
+export function TabItem({ label, icon: Icon, focused, onPress }: TabProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const reduced = useReducedMotion();
+  const pop = useSharedValue(1);
+
   useEffect(() => {
-    Animated.spring(on, {
-      toValue: focused ? 1 : 0,
-      useNativeDriver: true,
-      speed: 20,
-      bounciness: 6,
-    }).start();
-  }, [on, focused]);
+    if (focused && !reduced) {
+      pop.set(
+        withSequence(withSpring(scales.tabPop, springs.tabPop), withSpring(1, springs.tabPop)),
+      );
+    }
+  }, [focused, reduced, pop]);
+
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
 
   return (
     <Pressable
@@ -29,22 +40,13 @@ export function TabItem({ label, icon: Icon, focused, onPress }: TabProps & { ic
       accessibilityLabel={label}
     >
       <View style={styles.iconWrap}>
-        <Animated.View
-          style={[
-            styles.indicator,
-            {
-              opacity: on,
-              transform: [
-                { scaleX: on.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
-              ],
-            },
-          ]}
-        />
-        <Icon
-          size={22}
-          color={focused ? colors.brand : colors.inkSubtle}
-          strokeWidth={focused ? 2.25 : 2}
-        />
+        <Animated.View style={iconStyle}>
+          <Icon
+            size={22}
+            color={focused ? colors.primary : colors.faint}
+            strokeWidth={focused ? 2.3 : 1.9}
+          />
+        </Animated.View>
       </View>
       <Text style={[styles.label, focused && styles.labelOn]} numberOfLines={1}>
         {label}

@@ -1,5 +1,6 @@
 import { ScrollView, View } from 'react-native';
 
+import { TabHeader } from '@/components/TabHeader/TabHeader';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { Text } from '@/components/Text/Text';
 import { MeSections, type MeSectionsProps } from './MeSections';
@@ -21,6 +22,7 @@ export function Me({ name, email, initials, version, ...sections }: MeProps) {
   return (
     <View style={styles.root}>
       <MeshBackground spots={APP_MESH} />
+      <TabHeader title="Me" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileSummary

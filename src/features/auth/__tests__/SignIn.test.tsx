@@ -58,6 +58,25 @@ describe('SignIn', () => {
     });
   });
 
+  it('offers biometric sign-in only once it is set up', async () => {
+    const { view } = renderSignIn();
+    await view;
+    expect(screen.queryByRole('button', { name: /Face ID/ })).toBeNull();
+  });
+
+  it('signs in with Face ID when set up', async () => {
+    const { props, view } = renderSignIn({ biometric: { kind: 'face', label: 'Face ID' } });
+    await view;
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign in with Face ID' }));
+    expect(props.onBiometric).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the app version at the bottom', async () => {
+    const { view } = renderSignIn({ version: '1.0.0' });
+    await view;
+    expect(screen.getByText('Version 1.0.0')).toBeTruthy();
+  });
+
   it('routes social and link actions', async () => {
     const { props, view } = renderSignIn();
     await view;

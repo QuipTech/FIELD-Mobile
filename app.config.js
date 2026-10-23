@@ -32,6 +32,44 @@ const EAS_PROJECT_ID = '0d1bab1e-7439-4c09-b7a9-b2b4e2b1ab1a';
 const BASE_ID = 'au.com.quiptechfield.field';
 // Bare workflow (android/ exists) disallows runtimeVersion policies; keep this equal to the app version.
 const APP_VERSION = '1.0.0';
+const FACE_ID_PERMISSION = 'Allow $(PRODUCT_NAME) to use Face ID to sign you in.';
+const MICROPHONE_PERMISSION =
+  'Allow $(PRODUCT_NAME) to use the microphone so you can ask AI by voice.';
+
+/** Native permissions and their prompts (the same in every environment). */
+const PERMISSION_PLUGINS = [
+  // Both set NSFaceIDUsageDescription; keep the wording identical.
+  ['expo-secure-store', { faceIDPermission: FACE_ID_PERMISSION }],
+  ['expo-local-authentication', { faceIDPermission: FACE_ID_PERMISSION }],
+  'expo-font',
+  [
+    'expo-camera',
+    {
+      cameraPermission:
+        'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
+      // Photos only; no video recording. (Voice questions add the microphone themselves.)
+      recordAudioAndroid: false,
+    },
+  ],
+  [
+    'expo-image-picker',
+    {
+      photosPermission: 'Allow $(PRODUCT_NAME) to attach photos to your Ask AI questions.',
+      cameraPermission:
+        'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
+      // Not `false`: that blocks RECORD_AUDIO on Android, which voice questions need.
+      microphonePermission: MICROPHONE_PERMISSION,
+    },
+  ],
+  [
+    'expo-speech-recognition',
+    {
+      microphonePermission: MICROPHONE_PERMISSION,
+      speechRecognitionPermission:
+        'Allow $(PRODUCT_NAME) to turn your speech into text for Ask AI questions.',
+    },
+  ],
+];
 
 /** @returns {AppEnv} */
 function resolveEnv() {
@@ -56,7 +94,9 @@ module.exports = ({ config }) => {
     version: APP_VERSION,
     orientation: 'portrait',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'automatic', // Light / Dark / System from Profile
+    // Light only until every screen uses the themed colours: most still draw light backgrounds,
+    // so following a dark phone turned their text light-on-light. Set back to 'automatic' then.
+    userInterfaceStyle: 'light',
     ios: {
       supportsTablet: true,
       bundleIdentifier: `${BASE_ID}${suffix}`,
@@ -65,7 +105,7 @@ module.exports = ({ config }) => {
     android: {
       package: `${BASE_ID}${suffix}`,
       adaptiveIcon: {
-        backgroundColor: '#F3F2F2',
+        backgroundColor: '#39279B', // brandSplash; the background PNG draws the gradient
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
@@ -77,26 +117,7 @@ module.exports = ({ config }) => {
       'expo-status-bar',
       'expo-dev-client',
       'expo-updates',
-      'expo-secure-store',
-      'expo-font',
-      [
-        'expo-camera',
-        {
-          cameraPermission:
-            'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
-          // Photos only for now; no video recording, so no microphone on Android.
-          recordAudioAndroid: false,
-        },
-      ],
-      [
-        'expo-image-picker',
-        {
-          photosPermission: 'Allow $(PRODUCT_NAME) to attach photos to your Ask AI questions.',
-          cameraPermission:
-            'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
-          microphonePermission: false,
-        },
-      ],
+      ...PERMISSION_PLUGINS,
       [
         'expo-splash-screen',
         // Logo card on brand violet; BrandSplash (src/features/splash) takes over seamlessly.

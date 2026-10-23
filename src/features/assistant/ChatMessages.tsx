@@ -7,6 +7,8 @@ import {
   Info,
   LifeBuoy,
   Sparkles,
+  Square,
+  Volume2,
 } from 'lucide-react-native';
 import { Image, Pressable, View } from 'react-native';
 
@@ -15,6 +17,7 @@ import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
 import { colors } from '@/theme';
 import type { ChatMessage, Citation, Feedback } from './data';
+import { speakAnswer, stopSpeaking, useSpeaker } from './speaker';
 import { styles } from './styles';
 
 export type AnswerActions = {
@@ -82,6 +85,9 @@ export function ChatBubble({
           </Text>
         )}
         <View style={styles.chips}>
+          {!message.streaming && message.text.trim() !== '' && (
+            <ListenChip id={message.id} text={message.text} />
+          )}
           <FilterChip label="Log as entry" icon={ClipboardPlus} onPress={actions.onLogEntry} />
           <FilterChip label="Raise case" icon={LifeBuoy} onPress={actions.onRaiseCase} />
           {source && (
@@ -100,6 +106,20 @@ export function ChatBubble({
         </View>
       </View>
     </View>
+  );
+}
+
+/** Reads the answer aloud; while it plays, the chip stops it. */
+function ListenChip({ id, text }: { id: string; text: string }) {
+  const speaking = useSpeaker((s) => s.speakingId === id);
+  return (
+    <FilterChip
+      label={speaking ? 'Stop' : 'Listen'}
+      icon={speaking ? Square : Volume2}
+      selected={speaking}
+      accessibilityLabel={speaking ? 'Stop reading the answer' : 'Read the answer aloud'}
+      onPress={() => (speaking ? stopSpeaking() : speakAnswer(id, text))}
+    />
   );
 }
 

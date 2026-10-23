@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, gap: spacing.sm },
   filters: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.xxs },
-  newButton: { minHeight: 38, paddingHorizontal: 14, gap: 6 },
 
   // List card
   splitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

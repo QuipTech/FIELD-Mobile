@@ -15,7 +15,7 @@ const renderScreen = (ui: ReactElement) =>
 
 describe('CasesList', () => {
   const setup = async () => {
-    const props = { onNewCase: jest.fn(), onOpenCase: jest.fn() };
+    const props = { onOpenCase: jest.fn() };
     await renderScreen(<CasesList cases={SAMPLE_CASES} {...props} />);
     return props;
   };
@@ -28,8 +28,6 @@ describe('CasesList', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: /^P1, case 1042/ }));
     expect(props.onOpenCase).toHaveBeenCalledWith('1042');
-    await fireEvent.press(screen.getByRole('button', { name: 'New' }));
-    expect(props.onNewCase).toHaveBeenCalledTimes(1);
   });
 
   it('hides triage chips and assignees from customers', async () => {
@@ -39,9 +37,7 @@ describe('CasesList', () => {
   });
 
   it('lets admins triage by assignment and SLA', async () => {
-    await renderScreen(
-      <CasesList cases={SAMPLE_CASES} isAdmin onNewCase={jest.fn()} onOpenCase={jest.fn()} />,
-    );
+    await renderScreen(<CasesList cases={SAMPLE_CASES} isAdmin onOpenCase={jest.fn()} />);
     expect(screen.getByText('Assigned to R. Mendes (QuipTech)')).toBeTruthy();
     expect(screen.getAllByText('Unassigned')).toHaveLength(2); // chip + case row
 

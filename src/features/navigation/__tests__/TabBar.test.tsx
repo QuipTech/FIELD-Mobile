@@ -8,7 +8,7 @@ const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
-const NAMES = ['index', 'machines', 'knowledge', 'ask-ai', 'cases'];
+const NAMES = ['index', 'machines', 'ask-ai', 'knowledge', 'me'];
 
 describe('TabBar', () => {
   it('shows every tab, marks the current one and navigates', async () => {

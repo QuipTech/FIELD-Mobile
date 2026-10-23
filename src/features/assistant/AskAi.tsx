@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 
 import { FilterChip, FilterSelect } from '@/components/FilterChip/FilterChip';
 import { Meter } from '@/components/Meter/Meter';
+import { Decorations } from '@/features/auth/Decorations';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { TabHeader } from '@/components/TabHeader/TabHeader';
 import { Text } from '@/components/Text/Text';
@@ -36,7 +37,6 @@ export type AskAiProps = AnswerActions & {
   onNewChat: () => void;
   onHistory: () => void;
   onAttach: () => void;
-  onVoice: () => void;
   /** Photo waiting to go with the next question. */
   image?: { uri: string };
   onRemoveImage?: () => void;
@@ -78,6 +78,7 @@ export function AskAi({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <MeshBackground spots={APP_MESH} />
+      <Decorations placement="aiChat" />
       <TabHeader
         title="Ask AI"
         right={
@@ -114,7 +115,6 @@ export function AskAi({
         onChange={setDraft}
         onSend={send}
         onAttach={props.onAttach}
-        onVoice={props.onVoice}
         image={props.image}
         onRemoveImage={props.onRemoveImage}
       />

@@ -7,9 +7,10 @@ export default function TabsLayout() {
     <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="machines" />
-      <Tabs.Screen name="knowledge" />
+      {/* Centre slot: the raised AI button. */}
       <Tabs.Screen name="ask-ai" />
-      <Tabs.Screen name="cases" />
+      <Tabs.Screen name="knowledge" />
+      <Tabs.Screen name="me" />
     </Tabs>
   );
 }

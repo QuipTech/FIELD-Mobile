@@ -25,6 +25,22 @@ describe('AiHistory', () => {
     expect(props.onClear).toHaveBeenCalledTimes(1);
   });
 
+  it('groups by day, sums up, and searches questions and machines', async () => {
+    await renderScreen(
+      <AiHistory conversations={SAMPLE_CONVERSATIONS} onOpen={jest.fn()} onClear={jest.fn()} />,
+    );
+    expect(screen.getByText('3 conversations')).toBeTruthy();
+    expect(screen.getByText('Today')).toBeTruthy();
+    expect(screen.getByText('Previous 7 days')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText('Search your questions'), 'dr-4412');
+    expect(screen.getByText('Show me the drill rod change procedure')).toBeTruthy();
+    expect(screen.queryByText("What's the torque spec for the final drive bolts?")).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText('Search your questions'), 'zzz');
+    expect(screen.getByText('No questions match “zzz”.')).toBeTruthy();
+  });
+
   it('shows an empty state without the clear button', async () => {
     await renderScreen(<AiHistory conversations={[]} onOpen={jest.fn()} onClear={jest.fn()} />);
     expect(screen.getByText('No AI conversations yet')).toBeTruthy();

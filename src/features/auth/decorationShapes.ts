@@ -159,6 +159,20 @@ export const shapePlacements = {
     shape('pill', 'teal', 38, { top: '50%', left: 90 }, [22, -18, 30], 12, -24),
     shape('dot', 'violet', 14, { top: '28%', right: 24 }, [-14, 20, 0], 6),
   ]),
+  // Ask AI chat: between the header and the composer, mostly near the edges so message bubbles
+  // (solid) pass over them; a couple sit in the open middle around the welcome prompt.
+  aiChat: staggered([
+    shape('outline', 'violet', 44, { top: '16%', right: 22 }, [-18, 24, 40], 10, 18),
+    shape('dot', 'amber', 22, { top: '20%', left: 24 }, [20, -14, 0], 7),
+    shape('ring', 'teal', 64, { top: '32%', left: -26 }, [26, 20, 0], 12),
+    shape('plus', 'violet', 16, { top: '27%', left: '42%' }, [-16, 18, 120], 8, 10),
+    shape('tile', 'violet', 30, { top: '46%', right: -6 }, [-20, 22, -50], 10, 30),
+    shape('pill', 'amber', 40, { top: '60%', left: 18 }, [22, -16, 30], 12, -24),
+    shape('dot', 'teal', 14, { top: '56%', right: '30%' }, [-14, 18, 0], 6),
+    shape('plus', 'amber', 14, { top: '72%', right: 48 }, [16, -20, -120], 8),
+    shape('dot', 'violet', 110, { bottom: -48, right: -44 }, [-20, -14, 0], 15),
+    shape('outline', 'teal', 28, { bottom: '14%', left: '38%' }, [18, -18, 90], 11, -12),
+  ]),
 } as const;
 
 export type ShapePlacement = keyof typeof shapePlacements;

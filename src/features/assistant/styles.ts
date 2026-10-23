@@ -137,5 +137,13 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendPressed: { backgroundColor: colors.brandDeep },
+  sendListening: { backgroundColor: colors.danger },
+  voiceHalo: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.danger,
+  },
   title: { fontFamily: fontFamily.medium, fontSize: 18, lineHeight: 24, textAlign: 'center' },
 });

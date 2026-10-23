@@ -15,7 +15,7 @@ const OPEN_CASES_ON_HOME = 2;
 
 function openKpi(key: AdminKpiKey) {
   if (key === 'machinesDown') router.navigate('/machines');
-  else if (key === 'casesNearBreach') router.navigate('/cases');
+  else if (key === 'casesNearBreach') router.push('/cases');
   else if (key === 'aiToReview') router.push('/ai-history');
   else if (key === 'bulletinsToApprove') router.navigate('/knowledge');
 }
@@ -52,12 +52,12 @@ export default function HomeRoute() {
         onCapture={() => router.push('/capture')}
         onNotifications={() => router.push('/notifications')}
         unreadNotifications={unread.data}
-        onProfile={() => router.push('/profile')}
+        onProfile={() => router.navigate('/me')}
         onSeeAll={() => router.navigate('/machines')}
         onOpenMachine={(id) => router.push({ pathname: '/machine/[id]', params: { id } })}
         onOpenKpi={openKpi}
         onOpenCase={(id) => router.push({ pathname: '/case/[id]', params: { id } })}
-        onSeeAllCases={() => router.navigate('/cases')}
+        onSeeAllCases={() => router.push('/cases')}
       />
       <PortalGuide visible={guide.visible} onDone={guide.dismiss} />
     </>

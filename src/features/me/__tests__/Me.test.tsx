@@ -10,7 +10,7 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-const setup = async (data: Partial<MeData> = {}, isAdmin = false) => {
+const setup = async (data: Partial<MeData> = {}, isAdmin = false, extra: Partial<MeProps> = {}) => {
   const props: MeProps = {
     isAdmin,
     team: isAdmin ? SAMPLE_TEAM : undefined,
@@ -22,6 +22,7 @@ const setup = async (data: Partial<MeData> = {}, isAdmin = false) => {
     notificationsOn: true,
     onToggleNotifications: jest.fn(),
     onNavigate: jest.fn(),
+    ...extra,
   };
   await render(
     <SafeAreaProvider initialMetrics={metrics}>
@@ -32,6 +33,27 @@ const setup = async (data: Partial<MeData> = {}, isAdmin = false) => {
 };
 
 describe('Me', () => {
+  it('toggles Face ID sign-in under Security when the device supports it', async () => {
+    const onToggle = jest.fn();
+    await setup({}, false, {
+      biometric: { support: { kind: 'face', label: 'Face ID' }, on: false, onToggle },
+    });
+    expect(screen.getByText('Security')).toBeTruthy();
+    await fireEvent(screen.getByLabelText('Sign in with Face ID'), 'valueChange', true);
+    expect(onToggle).toHaveBeenCalledWith(true);
+  });
+
+  it('opens support cases from Activity', async () => {
+    const props = await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Support cases' }));
+    expect(props.onNavigate).toHaveBeenCalledWith('cases');
+  });
+
+  it('hides Security without biometrics', async () => {
+    await setup();
+    expect(screen.queryByText('Security')).toBeNull();
+  });
+
   it('shows the profile, role and plan', async () => {
     await setup();
     expect(screen.getByText('Jonah Okoye')).toBeTruthy();
