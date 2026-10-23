@@ -18,6 +18,13 @@ export const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
 
   thread: { padding: spacing.md, gap: spacing.md, flexGrow: 1 },
+  usage: {
+    padding: spacing.sm,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    backgroundColor: colors.surface,
+  },
   userBubble: {
     alignSelf: 'flex-end',
     maxWidth: '84%',
@@ -77,6 +84,24 @@ export const styles = StyleSheet.create({
   centerText: { textAlign: 'center' },
 
   // Composer
+  userImage: { width: 160, height: 120, borderRadius: 10, marginBottom: 6 },
+  attachment: {
+    alignSelf: 'flex-start',
+    marginLeft: spacing.md,
+    marginTop: spacing.xs,
+  },
+  attachmentImage: { width: 64, height: 64, borderRadius: 10 },
+  attachmentRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 
 import { ScanScreen } from '@/features/camera/ScanScreen';
-import { machineIdFromCode, useMachines } from '@/features/machines/data';
+import { useMachines } from '@/features/machines/api';
+import { machineIdFromCode } from '@/features/machines/data';
 
 export default function ScanRoute() {
-  const { data } = useMachines();
+  const { data = [] } = useMachines();
   return (
     <ScanScreen
       resolve={(code) => machineIdFromCode(data, code)}

@@ -6,24 +6,34 @@ import { GroupedList, GroupedRow } from '@/components/GroupedList/GroupedList';
 import { Text } from '@/components/Text/Text';
 import { formatDate } from '@/lib/date';
 import { colors } from '@/theme';
-import { AllowanceCard, PaymentCard, PlanOverview } from './BillingCards';
+import { AllowanceCard, ManagedPlanCard, PaymentCard, PlanOverview } from './BillingCards';
 import type { BillingData, Invoice } from './data';
 import { INVOICE_STATUS } from './status';
 import { styles } from './styles';
 
 export type BillingProps = {
   data: BillingData;
-  /** Shows a small note while the screen uses sample data. */
-  isSample?: boolean;
+  /** Admins manage billing; technicians see the plan and their own usage, read-only. */
+  isAdmin: boolean;
   onManagePayment: () => void;
   onDownloadInvoice: (invoice: Invoice) => void;
 };
 
 /** M9B Billing & subscription. The white header comes from the stack (see app/_layout). */
-export function Billing({ data, isSample, onManagePayment, onDownloadInvoice }: BillingProps) {
+export function Billing({ data, isAdmin, onManagePayment, onDownloadInvoice }: BillingProps) {
+  if (!isAdmin) {
+    return (
+      <DetailScreen>
+        {data.plan && <ManagedPlanCard plan={data.plan} />}
+        <SectionTitle>Your AI queries</SectionTitle>
+        <AllowanceCard {...data.personalAllowance} label="Your AI queries this period" />
+      </DetailScreen>
+    );
+  }
+
   return (
     <DetailScreen>
-      <PlanOverview plan={data.plan} />
+      {data.plan && <PlanOverview plan={data.plan} />}
 
       <SectionTitle>AI query allowance</SectionTitle>
       <AllowanceCard {...data.allowance} />
@@ -50,12 +60,6 @@ export function Billing({ data, isSample, onManagePayment, onDownloadInvoice }: 
           <InvoiceRow key={invoice.id} invoice={invoice} onDownload={onDownloadInvoice} />
         ))}
       </GroupedList>
-
-      {isSample && (
-        <Text variant="caption" color="inkSubtle" style={styles.footnote}>
-          Sample billing data — live data arrives with the API.
-        </Text>
-      )}
     </DetailScreen>
   );
 }

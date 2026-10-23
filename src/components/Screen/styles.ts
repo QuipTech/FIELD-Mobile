@@ -1,9 +1,7 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, spacing } from '@/theme';
 
-import { colors, spacing } from '@/theme';
-
-export const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.ground },
-  content: { padding: spacing.md, gap: spacing.md },
+export const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.bg },
+  content: { padding: spacing.md, gap: spacing.loose },
   grow: { flexGrow: 1 },
-});
+}));

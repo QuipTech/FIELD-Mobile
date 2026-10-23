@@ -2,13 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { SAMPLE_CASES } from '@/features/cases/data';
-import { SAMPLE_MACHINES, type Machine } from '../data';
+import { SAMPLE_CASES } from '@/test/fixtures/cases';
+import { type Machine } from '../data';
+import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { MachineDetail } from '../MachineDetail';
 import { MachinesList } from '../MachinesList';
-import { MachineManuals } from '../Manuals';
-import { HT_2201_RECORDS } from '../sampleRecords';
-import { MachineTimeline } from '../Timelines';
+import { HT_2201_RECORDS } from '@/test/fixtures/machines/records';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -55,6 +54,34 @@ describe('MachinesList', () => {
   });
 });
 
+describe('MachinesList by role', () => {
+  const base = { onScan: jest.fn(), onNearMe: jest.fn(), onOpenMachine: jest.fn() };
+
+  it('scopes technicians to their sites with no add button', async () => {
+    await renderScreen(
+      <MachinesList machines={FLEET} homeSite="all" onAddMachine={jest.fn()} {...base} />,
+    );
+    expect(screen.getByText('Machines at your sites · Pit 4, Pit 2')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add machine' })).toBeNull();
+  });
+
+  it('shows admins the whole fleet and an add button', async () => {
+    const onAddMachine = jest.fn();
+    await renderScreen(
+      <MachinesList
+        machines={FLEET}
+        homeSite="all"
+        isAdmin
+        onAddMachine={onAddMachine}
+        {...base}
+      />,
+    );
+    expect(screen.getByText(`All sites · ${FLEET.length} machines`)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add machine' }));
+    expect(onAddMachine).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('MachineDetail', () => {
   const setup = async () => {
     const props = {
@@ -66,7 +93,7 @@ describe('MachineDetail', () => {
       onOpenManual: jest.fn(),
       onDownloadManual: jest.fn(),
     };
-    const cases = SAMPLE_CASES.filter((c) => c.machine.id === 'HT-2201');
+    const cases = SAMPLE_CASES.filter((c) => c.machine?.id === 'HT-2201');
     await renderScreen(
       <MachineDetail machine={HT_2201} records={RECORDS} cases={cases} {...props} />,
     );
@@ -82,6 +109,31 @@ describe('MachineDetail', () => {
     expect(props.onOpenComponent).toHaveBeenCalledWith('hydraulics');
     await fireEvent.press(screen.getByRole('button', { name: 'Ask AI' }));
     expect(props.onAskAi).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides assigned technicians from technicians', async () => {
+    await setup();
+    expect(screen.queryByText('4 technicians assigned')).toBeNull();
+  });
+
+  it('shows assigned technicians to admins', async () => {
+    await renderScreen(
+      <MachineDetail
+        machine={HT_2201}
+        records={RECORDS}
+        cases={[]}
+        isAdmin
+        technicians={4}
+        onAskAi={jest.fn()}
+        onLogEntry={jest.fn()}
+        onOpenComponent={jest.fn()}
+        onSeeAll={jest.fn()}
+        onOpenCase={jest.fn()}
+        onOpenManual={jest.fn()}
+        onDownloadManual={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('4 technicians assigned')).toBeTruthy();
   });
 
   it('previews history, manuals and cases in tabs', async () => {
@@ -103,34 +155,5 @@ describe('MachineDetail', () => {
     await fireEvent.press(screen.getByRole('tab', { name: 'Cases (1)' }));
     await fireEvent.press(screen.getByRole('button', { name: /^P1, case 1042/ }));
     expect(props.onOpenCase).toHaveBeenCalledWith('1042');
-  });
-});
-
-describe('MachineTimeline', () => {
-  it('filters entries and offers to add one', async () => {
-    const props = { onAddEntry: jest.fn(), onOpenPhoto: jest.fn() };
-    await renderScreen(<MachineTimeline entries={RECORDS.history} filter="fault" {...props} />);
-    expect(screen.getByText('E-2204 · accumulator pre-charge low')).toBeTruthy();
-    expect(screen.queryByText('250 h walkaround')).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: 'Add entry' }));
-    expect(props.onAddEntry).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('MachineManuals', () => {
-  it('searches documents', async () => {
-    await renderScreen(
-      <MachineManuals
-        manuals={RECORDS.manuals}
-        onOpenManual={jest.fn()}
-        onDownloadManual={jest.fn()}
-      />,
-    );
-    expect(screen.getAllByText('Offline')).toHaveLength(2);
-    await fireEvent.changeText(screen.getByLabelText('Search manuals'), 'wiring');
-    expect(screen.getByText('Wiring diagram — electrical')).toBeTruthy();
-    expect(screen.queryByText('Operator & maintenance manual')).toBeNull();
-    await fireEvent.changeText(screen.getByLabelText('Search manuals'), 'gearbox');
-    expect(screen.getByText('No documents match')).toBeTruthy();
   });
 });

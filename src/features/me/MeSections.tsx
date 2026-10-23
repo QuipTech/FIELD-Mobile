@@ -1,36 +1,30 @@
 import {
   Bell,
-  BookOpen,
   CloudUpload,
   Compass,
+  CreditCard,
   Download,
   Globe,
-  LifeBuoy,
   LogOut,
   Sparkles,
-  Truck,
+  Users,
 } from 'lucide-react-native';
 
 import { GroupedList, GroupedRow } from '@/components/GroupedList/GroupedList';
 import { Text } from '@/components/Text/Text';
-import type { MeData } from './data';
+import { formatNumber } from '@/lib/format';
+import type { MeData, TeamSummary } from './data';
 import { styles } from './styles';
 
 export type MeDestination =
-  | 'billing'
-  | 'upgrade'
-  | 'downloads'
-  | 'sync'
-  | 'language'
-  | 'machineHistory'
-  | 'aiHistory'
-  | 'help'
-  | 'faqs'
-  | 'replayGuide'
-  | 'signOut';
+  'billing' | 'team' | 'downloads' | 'sync' | 'language' | 'aiHistory' | 'replayGuide' | 'signOut';
 
 export type MeSectionsProps = {
   data: MeData;
+  /** Admins manage the team and billing; technicians only see their plan and usage. */
+  isAdmin: boolean;
+  /** Admin only. */
+  team?: TeamSummary;
   notificationsOn: boolean;
   onToggleNotifications: (on: boolean) => void;
   onNavigate: (to: MeDestination) => void;
@@ -41,6 +35,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 /** The M9 settings list, grouped, with sign out on its own at the end. */
 export function MeSections({
   data,
+  isAdmin,
+  team,
   notificationsOn,
   onToggleNotifications,
   onNavigate,
@@ -50,6 +46,8 @@ export function MeSections({
 
   return (
     <>
+      <AccountSection data={data} isAdmin={isAdmin} team={team} onNavigate={onNavigate} />
+
       <SectionLabel>Offline & preferences</SectionLabel>
       <GroupedList>
         <GroupedRow
@@ -76,14 +74,10 @@ export function MeSections({
 
       <SectionLabel>Activity</SectionLabel>
       <GroupedList>
-        <GroupedRow icon={Truck} label="My machine history" onPress={go('machineHistory')} />
         <GroupedRow icon={Sparkles} label="AI history" onPress={go('aiHistory')} />
       </GroupedList>
 
-      <SectionLabel>Support</SectionLabel>
       <GroupedList>
-        <GroupedRow icon={LifeBuoy} label="Help & support" onPress={go('help')} />
-        <GroupedRow icon={BookOpen} label="FAQs" onPress={go('faqs')} />
         <GroupedRow icon={Compass} label="Replay welcome guide" onPress={go('replayGuide')} />
       </GroupedList>
 
@@ -96,6 +90,54 @@ export function MeSections({
           onPress={go('signOut')}
         />
       </GroupedList>
+    </>
+  );
+}
+
+/** Admins manage the team and billing; technicians see their plan, managed by the admin. */
+function AccountSection({
+  data,
+  isAdmin,
+  team,
+  onNavigate,
+}: Pick<MeSectionsProps, 'data' | 'isAdmin' | 'team' | 'onNavigate'>) {
+  const go = (to: MeDestination) => () => onNavigate(to);
+  const planName = data.plan?.name.replace(/ plan$/i, '') ?? 'Plan';
+
+  return (
+    <>
+      <SectionLabel>Account</SectionLabel>
+      {isAdmin ? (
+        <GroupedList>
+          <GroupedRow
+            icon={Users}
+            label="Team & roles"
+            value={
+              team
+                ? [plural(team.users, 'user'), team.sites ? plural(team.sites, 'site') : '']
+                    .filter(Boolean)
+                    .join(' · ')
+                : undefined
+            }
+            onPress={go('team')}
+          />
+          <GroupedRow
+            icon={CreditCard}
+            label="Billing & plan"
+            value={data.plan ? `${planName} · ${formatNumber(data.plan.assets)} assets` : undefined}
+            onPress={go('billing')}
+          />
+        </GroupedList>
+      ) : (
+        <GroupedList>
+          <GroupedRow
+            icon={CreditCard}
+            label="Plan & usage"
+            value={`${planName} · managed by your admin`}
+            onPress={go('billing')}
+          />
+        </GroupedList>
+      )}
     </>
   );
 }

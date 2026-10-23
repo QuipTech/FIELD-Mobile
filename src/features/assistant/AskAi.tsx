@@ -3,14 +3,17 @@ import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { FilterChip, FilterSelect } from '@/components/FilterChip/FilterChip';
+import { Meter } from '@/components/Meter/Meter';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { TabHeader } from '@/components/TabHeader/TabHeader';
 import { Text } from '@/components/Text/Text';
 import type { Machine } from '@/features/machines/data';
+import { formatShortDate } from '@/lib/date';
+import { formatUsage } from '@/lib/format';
 import { colors } from '@/theme';
 import { ChatBubble, type AnswerActions } from './ChatMessages';
 import { Composer } from './Composer';
-import { SUGGESTIONS, type ChatMessage } from './data';
+import { SUGGESTIONS, type AiUsage, type ChatMessage } from './data';
 import { styles } from './styles';
 
 export const NO_MACHINE = 'none';
@@ -21,6 +24,12 @@ export type AskAiProps = AnswerActions & {
   machineId: string;
   onMachineChange: (id: string) => void;
   messages: ChatMessage[];
+  /** Admins see org-wide usage and how each answer was produced. */
+  isAdmin: boolean;
+  /** Undefined while loading; the meter is hidden until then. */
+  usage?: AiUsage;
+  /** An answer is streaming in; sending waits for it. */
+  busy?: boolean;
   /** Prefills the question box when it changes, e.g. from "Ask AI about this". */
   prompt?: string;
   onSend: (text: string) => void;
@@ -28,10 +37,22 @@ export type AskAiProps = AnswerActions & {
   onHistory: () => void;
   onAttach: () => void;
   onVoice: () => void;
+  /** Photo waiting to go with the next question. */
+  image?: { uri: string };
+  onRemoveImage?: () => void;
 };
 
 /** M8 AI assistant (the Ask AI tab). */
-export function AskAi({ machines, machineId, messages, prompt, ...props }: AskAiProps) {
+export function AskAi({
+  machines,
+  machineId,
+  messages,
+  prompt,
+  isAdmin,
+  usage,
+  busy = false,
+  ...props
+}: AskAiProps) {
   const [draft, setDraft] = useState(prompt ?? '');
   const scroll = useRef<ScrollView>(null);
   // A new prompt (e.g. "Ask AI about this" again) replaces the draft.
@@ -42,12 +63,13 @@ export function AskAi({ machines, machineId, messages, prompt, ...props }: AskAi
   }
 
   const send = (text: string) => {
+    if (busy) return;
     props.onSend(text);
     setDraft('');
   };
   const machineOptions = [
     { value: NO_MACHINE, label: 'Any machine' },
-    ...machines.map((m) => ({ value: m.id, label: m.id })),
+    ...machines.map((m) => ({ value: m.id, label: m.label })),
   ];
 
   return (
@@ -80,10 +102,11 @@ export function AskAi({ machines, machineId, messages, prompt, ...props }: AskAi
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
       >
+        {usage && <UsageMeter usage={usage} />}
         {messages.length === 0 ? (
           <Welcome onPick={setDraft} />
         ) : (
-          messages.map((m) => <ChatBubble key={m.id} message={m} {...props} />)
+          messages.map((m) => <ChatBubble key={m.id} message={m} showReview={isAdmin} {...props} />)
         )}
       </ScrollView>
       <Composer
@@ -92,8 +115,31 @@ export function AskAi({ machines, machineId, messages, prompt, ...props }: AskAi
         onSend={send}
         onAttach={props.onAttach}
         onVoice={props.onVoice}
+        image={props.image}
+        onRemoveImage={props.onRemoveImage}
       />
     </KeyboardAvoidingView>
+  );
+}
+
+/** AI1 allowance: your own queries, or the whole org's for admins. Overage never blocks. */
+function UsageMeter({ usage }: { usage: AiUsage }) {
+  const count = formatUsage(usage.used, usage.limit);
+  const label = usage.scope === 'org' ? `Org: ${count} queries` : `${count} queries this month`;
+  const caption =
+    usage.scope === 'org' && usage.overage
+      ? `Overage ${usage.overage} each · resets ${formatShortDate(usage.resetsOn)}`
+      : `Resets ${formatShortDate(usage.resetsOn)}`;
+  return (
+    <View style={styles.usage}>
+      <Meter
+        value={usage.used}
+        max={usage.limit}
+        label={label}
+        caption={caption}
+        tone={usage.used > usage.limit ? 'warning' : 'primary'}
+      />
+    </View>
   );
 }
 

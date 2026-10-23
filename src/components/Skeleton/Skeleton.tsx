@@ -1,33 +1,42 @@
-import { useEffect, useState } from 'react';
-import { Animated, type DimensionValue } from 'react-native';
+import { useEffect } from 'react';
+import type { DimensionValue } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { styles } from './styles';
+import { loops, makeStyles, radii, skeletonOpacity, useReducedMotion } from '@/theme';
 
-export type SkeletonProps = {
-  width?: DimensionValue;
-  height?: number;
-};
+export type SkeletonProps = { width?: DimensionValue; height?: number; radius?: number };
 
-/** Pulsing placeholder block. Hidden from screen readers (parent announces loading). */
-export function Skeleton({ width = '100%', height = 16 }: SkeletonProps) {
-  const [opacity] = useState(() => new Animated.Value(0.5));
+/** Pulsing placeholder (`.sk`): opacity 0.55 ↔ 1 over 1.4 s; still with Reduce Motion. */
+export function Skeleton({ width = '100%', height = 14, radius = radii.badge }: SkeletonProps) {
+  const styles = useStyles();
+  const reduced = useReducedMotion();
+  const opacity = useSharedValue<number>(skeletonOpacity.from);
+  const pulse = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.5, duration: 700, useNativeDriver: true }),
-      ]),
+    if (reduced) {
+      opacity.set(skeletonOpacity.from);
+      return;
+    }
+    opacity.set(
+      withRepeat(withTiming(skeletonOpacity.to, { duration: loops.skeleton / 2 }), -1, true),
     );
-    loop.start();
-    return () => loop.stop();
-  }, [opacity]);
+    return () => cancelAnimation(opacity);
+  }, [opacity, reduced]);
 
   return (
     <Animated.View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[styles.block, { width, height, opacity }]}
+      style={[styles.block, { width, height, borderRadius: radius }, pulse]}
     />
   );
 }
+
+const useStyles = makeStyles((c) => ({ block: { backgroundColor: c.fill } }));

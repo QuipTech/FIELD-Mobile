@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CaseDetail } from '../CaseDetail';
 import { CasesList } from '../CasesList';
-import { SAMPLE_CASES } from '../data';
+import { SAMPLE_CASES } from '@/test/fixtures/cases';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -30,6 +30,29 @@ describe('CasesList', () => {
     expect(props.onOpenCase).toHaveBeenCalledWith('1042');
     await fireEvent.press(screen.getByRole('button', { name: 'New' }));
     expect(props.onNewCase).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides triage chips and assignees from customers', async () => {
+    await setup();
+    expect(screen.queryByRole('togglebutton', { name: /Unassigned/ })).toBeNull();
+    expect(screen.queryByText('Assigned to R. Mendes (QuipTech)')).toBeNull();
+  });
+
+  it('lets admins triage by assignment and SLA', async () => {
+    await renderScreen(
+      <CasesList cases={SAMPLE_CASES} isAdmin onNewCase={jest.fn()} onOpenCase={jest.fn()} />,
+    );
+    expect(screen.getByText('Assigned to R. Mendes (QuipTech)')).toBeTruthy();
+    expect(screen.getAllByText('Unassigned')).toHaveLength(2); // chip + case row
+
+    await fireEvent.press(screen.getByRole('togglebutton', { name: 'Unassigned, 1' }));
+    expect(screen.getByText('Hydraulic whine on lift')).toBeTruthy();
+    expect(screen.queryByText("Brake pressure alarm won't clear")).toBeNull();
+
+    await fireEvent.press(screen.getByRole('togglebutton', { name: 'Breaching SLA' }));
+    expect(screen.getByText('Close to SLA breach')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('togglebutton', { name: 'All sites' }));
+    expect(screen.getByText("Brake pressure alarm won't clear")).toBeTruthy();
   });
 
   it('filters by status and machine', async () => {
@@ -73,5 +96,38 @@ describe('CaseDetail', () => {
     await fireEvent.press(send);
     await waitFor(() => expect(onReply).toHaveBeenCalledWith('Parts arrive Thursday.'));
     expect(screen.getByLabelText('Reply')).toHaveDisplayValue('');
+  });
+});
+
+describe('CaseDetail roles', () => {
+  const base = {
+    supportCase: SAMPLE_CASES[0]!,
+    myInitials: 'JO',
+    onReply: jest.fn(),
+    onOpenAttachment: jest.fn(),
+    onOpenMachine: jest.fn(),
+  };
+
+  it('never shows internal notes or the note composer to customers', async () => {
+    await renderScreen(<CaseDetail {...base} />);
+    expect(screen.queryByText('Internal note · staff only')).toBeNull();
+    expect(screen.queryByText(/^Warranty claim likely/)).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Internal note' })).toBeNull();
+  });
+
+  it('shows internal notes to admins and routes notes away from replies', async () => {
+    const onReply = jest.fn();
+    const onInternalNote = jest.fn();
+    await renderScreen(
+      <CaseDetail {...base} isAdmin onReply={onReply} onInternalNote={onInternalNote} />,
+    );
+    expect(screen.getByText('Internal note · staff only')).toBeTruthy();
+    expect(screen.getByText(/^Warranty claim likely/)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('tab', { name: 'Internal note' }));
+    await fireEvent.changeText(screen.getByLabelText('Note text'), 'Check warranty.');
+    await fireEvent.press(screen.getByRole('button', { name: 'Add internal note' }));
+    await waitFor(() => expect(onInternalNote).toHaveBeenCalledWith('Check warranty.'));
+    expect(onReply).not.toHaveBeenCalled();
   });
 });

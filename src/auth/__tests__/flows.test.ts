@@ -1,7 +1,13 @@
 import * as amplifyAuth from 'aws-amplify/auth';
 
 import { authErrorMessage } from '../errors';
-import { requestPasswordReset, signInWithEmail, signInWithProvider, verifyEmail } from '../flows';
+import {
+  requestPasswordReset,
+  signInWithEmail,
+  signInWithProvider,
+  signOutUser,
+  verifyEmail,
+} from '../flows';
 import { useSession } from '../session';
 
 jest.mock('aws-amplify/auth', () => ({
@@ -18,6 +24,13 @@ jest.mock('aws-amplify/auth', () => ({
   getCurrentUser: jest.fn(),
 }));
 jest.mock('aws-amplify/utils', () => ({ Hub: { listen: jest.fn() } }));
+jest.mock('@/lib/queryClient', () => ({ queryClient: { clear: jest.fn() } }));
+const mockSync = jest.fn();
+const mockEnd = jest.fn();
+jest.mock('../apiSession', () => ({
+  syncApiSession: (...args: unknown[]) => mockSync(...args),
+  endApiSession: () => mockEnd(),
+}));
 
 const auth = jest.mocked(amplifyAuth);
 const cognitoError = (name: string, message = name) => Object.assign(new Error(message), { name });
@@ -25,7 +38,50 @@ const step = (signInStep: string) => ({ isSignedIn: false, nextStep: { signInSte
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSync.mockResolvedValue('signedIn');
   useSession.setState({ status: 'signedOut' });
+});
+
+describe('API session', () => {
+  it('opens the API session before entering the app', async () => {
+    auth.signIn.mockResolvedValue(step('DONE'));
+    await signInWithEmail('a@b.co', 'pw');
+    expect(mockSync).toHaveBeenCalledWith(undefined);
+    expect(useSession.getState().status).toBe('signedIn');
+  });
+
+  it('asks for company and phone when the API needs them', async () => {
+    auth.signIn.mockResolvedValue(step('DONE'));
+    mockSync.mockResolvedValue('profileRequired');
+    await signInWithEmail('a@b.co', 'pw');
+    expect(useSession.getState().status).toBe('profileRequired');
+  });
+
+  it('stays signed out if the API sync fails, so the user can retry', async () => {
+    auth.signIn.mockResolvedValue(step('DONE'));
+    mockSync.mockRejectedValue(Object.assign(new Error('offline'), { name: 'NetworkError' }));
+    await expect(signInWithEmail('a@b.co', 'pw')).rejects.toThrow('offline');
+    expect(useSession.getState().status).toBe('signedOut');
+  });
+
+  it('sends the sign-up company and phone after email verification', async () => {
+    auth.confirmSignUp.mockResolvedValue({
+      isSignUpComplete: true,
+      nextStep: { signUpStep: 'COMPLETE_AUTO_SIGN_IN' },
+    } as never);
+    auth.autoSignIn.mockResolvedValue(step('DONE'));
+    const profile = { companyName: 'QuipTech Mining', phoneNumber: '+61412345678' };
+    await verifyEmail('a@b.co', '123456', profile);
+    expect(mockSync).toHaveBeenCalledWith(profile);
+  });
+
+  it('ends the API session on sign-out', async () => {
+    useSession.setState({ status: 'signedIn' });
+    await signOutUser();
+    expect(mockEnd).toHaveBeenCalled();
+    expect(auth.signOut).toHaveBeenCalled();
+    expect(useSession.getState().status).toBe('signedOut');
+  });
 });
 
 describe('signInWithEmail', () => {

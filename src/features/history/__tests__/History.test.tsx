@@ -3,8 +3,7 @@ import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AiHistory } from '../AiHistory';
-import { SAMPLE_CONVERSATIONS, SAMPLE_ENTRIES } from '../data';
-import { MachineHistory } from '../MachineHistory';
+import { SAMPLE_CONVERSATIONS, SAMPLE_REVIEW_QUEUE } from '@/test/fixtures/history';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -12,26 +11,6 @@ const metrics = {
 };
 const renderScreen = (ui: ReactElement) =>
   render(<SafeAreaProvider initialMetrics={metrics}>{ui}</SafeAreaProvider>);
-
-describe('MachineHistory', () => {
-  it('filters entries by type and opens one', async () => {
-    const onOpenEntry = jest.fn();
-    await renderScreen(<MachineHistory entries={SAMPLE_ENTRIES} onOpenEntry={onOpenEntry} />);
-    expect(screen.getByText('250 h walkaround')).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Repairs' }));
-    expect(screen.getByText('Main hydraulic pump replaced')).toBeTruthy();
-    expect(screen.queryByText('250 h walkaround')).toBeNull();
-
-    await fireEvent.press(screen.getByRole('button', { name: /^Repair, .*Main hydraulic pump/ }));
-    expect(onOpenEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0]);
-  });
-
-  it('shows an empty state', async () => {
-    await renderScreen(<MachineHistory entries={[]} onOpenEntry={jest.fn()} />);
-    expect(screen.getByText('Nothing logged yet')).toBeTruthy();
-  });
-});
 
 describe('AiHistory', () => {
   it('lists past questions and offers to clear them', async () => {
@@ -50,5 +29,40 @@ describe('AiHistory', () => {
     await renderScreen(<AiHistory conversations={[]} onOpen={jest.fn()} onClear={jest.fn()} />);
     expect(screen.getByText('No AI conversations yet')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Clear AI history' })).toBeNull();
+  });
+
+  it('keeps the review queue from customers', async () => {
+    await renderScreen(
+      <AiHistory
+        conversations={SAMPLE_CONVERSATIONS}
+        onOpen={jest.fn()}
+        onClear={jest.fn()}
+        reviewQueue={SAMPLE_REVIEW_QUEUE}
+      />,
+    );
+    expect(screen.queryByText(/^Review queue/)).toBeNull();
+  });
+
+  it('lets admins switch to the review queue and filter it', async () => {
+    const onOpenReview = jest.fn();
+    await renderScreen(
+      <AiHistory
+        conversations={SAMPLE_CONVERSATIONS}
+        onOpen={jest.fn()}
+        onClear={jest.fn()}
+        isAdmin
+        reviewQueue={SAMPLE_REVIEW_QUEUE}
+        onOpenReview={onOpenReview}
+      />,
+    );
+    await fireEvent.press(screen.getByText('Review queue · 3'));
+    expect(screen.getByText('Safety refusal')).toBeTruthy();
+    expect(screen.getByText('Track sag measurement')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Clear AI history' })).toBeNull();
+
+    await fireEvent.press(screen.getByText('Unreviewed 2'));
+    expect(screen.queryByText('Track sag measurement')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: /^Bypass park brake interlock/ }));
+    expect(onOpenReview).toHaveBeenCalledWith(SAMPLE_REVIEW_QUEUE[0]);
   });
 });

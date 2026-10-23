@@ -27,6 +27,16 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanPressed: { backgroundColor: colors.brandDeep },
+  add: {
+    width: 48,
+    height: 48,
+    borderRadius: brandControl.radius,
+    borderWidth: 1.5,
+    borderColor: colors.divider,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filters: { gap: spacing.xs, paddingRight: spacing.md },
   filterScroll: { marginHorizontal: -spacing.md, paddingLeft: spacing.md, flexGrow: 0 },
 
@@ -62,6 +72,7 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   heroImage: { height: 170, borderRadius: 12, backgroundColor: colors.fill },
+  assigned: { marginTop: -spacing.xxs },
   heroTitle: { fontFamily: fontFamily.medium, fontSize: 17, lineHeight: 22 },
   specs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
 
@@ -76,4 +87,5 @@ export const styles = StyleSheet.create({
   seeAllText: { fontFamily: fontFamily.medium },
   actions: { flexDirection: 'row', gap: spacing.sm },
   action: { flex: 1 },
+  footerStack: { gap: spacing.sm },
 });

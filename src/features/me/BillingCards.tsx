@@ -37,8 +37,30 @@ export function PlanOverview({ plan }: { plan: Plan }) {
   );
 }
 
+/** What a technician sees: the plan is active, and someone else pays for it. */
+export function ManagedPlanCard({ plan }: { plan: Plan }) {
+  const status = PLAN_STATUS[plan.status];
+  return (
+    <View style={styles.card}>
+      <View style={styles.splitRow}>
+        <Text style={styles.planTitle} accessibilityRole="header">
+          {plan.name}
+        </Text>
+        <Pill label={status.label} tone={status.tone} />
+      </View>
+      <Text variant="caption" color="inkMuted">
+        Billing is managed by your company admin.
+      </Text>
+    </View>
+  );
+}
+
 /** AI queries used this period against the plan allowance. Overage is billed, never blocked. */
-export function AllowanceCard({ used, limit }: BillingData['allowance']) {
+export function AllowanceCard({
+  used,
+  limit,
+  label = 'AI queries used this period',
+}: BillingData['allowance'] & { label?: string }) {
   const over = used > limit;
   const pct = limit > 0 ? Math.min(used / limit, 1) * 100 : 0;
   return (
@@ -55,7 +77,7 @@ export function AllowanceCard({ used, limit }: BillingData['allowance']) {
         style={styles.meterTrack}
         accessible
         accessibilityRole="progressbar"
-        accessibilityLabel="AI queries used this period"
+        accessibilityLabel={label}
         accessibilityValue={{ min: 0, max: limit, now: Math.min(used, limit) }}
       >
         <View style={[styles.meterFill, over && styles.meterOver, { width: `${pct}%` as const }]} />
@@ -85,13 +107,19 @@ export function PaymentCard({
         <View
           style={styles.cardText}
           accessible
-          accessibilityLabel={`${payment.brand} ending in ${payment.last4}, via ${payment.processor}`}
+          accessibilityLabel={
+            payment.last4
+              ? `${payment.brand} ending in ${payment.last4}, via ${payment.processor}`
+              : `Payment methods are managed in ${payment.processor}`
+          }
         >
           <Text style={styles.cardTitle}>
-            {payment.brand} •••• {payment.last4}
+            {payment.last4 ? `${payment.brand} •••• ${payment.last4}` : 'Payment methods'}
           </Text>
           <Text variant="caption" color="inkMuted">
-            Via {payment.processor}
+            {payment.last4
+              ? `Via ${payment.processor}`
+              : `Managed securely in ${payment.processor}`}
           </Text>
         </View>
         <BrandButton

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { Button } from '../Button/Button';
-import { Seg } from '../Seg/Seg';
+import { Segmented } from '../Segmented/Segmented';
 
 describe('Button', () => {
   it('fires onPress and exposes an accessible label', async () => {
@@ -19,14 +19,16 @@ describe('Button', () => {
   });
 });
 
-describe('Seg', () => {
+describe('Segmented', () => {
   it('marks the selected option and reports changes', async () => {
     const onChange = jest.fn();
     const options = [
       { value: 'a', label: 'Alpha' },
       { value: 'b', label: 'Beta' },
     ] as const;
-    await render(<Seg options={options} value="a" onChange={onChange} accessibilityLabel="Pick" />);
+    await render(
+      <Segmented options={options} value="a" onChange={onChange} accessibilityLabel="Pick" />,
+    );
     expect(screen.getByRole('tab', { name: 'Alpha' })).toBeSelected();
     await fireEvent.press(screen.getByRole('tab', { name: 'Beta' }));
     expect(onChange).toHaveBeenCalledWith('b');

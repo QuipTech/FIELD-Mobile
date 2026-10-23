@@ -1,8 +1,8 @@
-import { fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ArticleView } from '../ArticleView';
-import { useArticle } from '../data';
+import { sampleArticle } from '@/test/fixtures/knowledge/articles';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -11,11 +11,14 @@ const metrics = {
 
 describe('ArticleView', () => {
   it('renders the procedure and hands off to Ask AI', async () => {
-    const { result } = await renderHook(() => useArticle('rear-suspension-recharge'));
     const onAskAi = jest.fn();
     await render(
       <SafeAreaProvider initialMetrics={metrics}>
-        <ArticleView article={result.current!} largeText={false} onAskAi={onAskAi} />
+        <ArticleView
+          article={sampleArticle('rear-suspension-recharge')!}
+          largeText={false}
+          onAskAi={onAskAi}
+        />
       </SafeAreaProvider>,
     );
 

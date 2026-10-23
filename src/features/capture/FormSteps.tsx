@@ -63,7 +63,7 @@ export function DetailsStep({
         {machines.map((m) => (
           <FilterChip
             key={m.id}
-            label={m.id}
+            label={m.label}
             selected={draft.machineId === m.id}
             onPress={() => update({ machineId: m.id })}
           />
@@ -123,7 +123,7 @@ export function NotesStep({
         <Text style={styles.summaryTitle}>{draft.title}</Text>
         {machine && (
           <Text variant="caption" color="inkMuted">
-            {machine.id} · {machine.model}
+            {machine.label} · {machine.model}
           </Text>
         )}
       </BrandCard>

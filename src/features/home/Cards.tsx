@@ -11,7 +11,7 @@ import { styles } from './styles';
 const CHART_HEIGHT = 56;
 
 /** Fleet uptime card with a sparkline scaled to the weekly values' range. */
-export function UptimeCard({ uptime }: { uptime: HomeData['uptime'] }) {
+export function UptimeCard({ uptime }: { uptime: NonNullable<HomeData['uptime']> }) {
   const [width, setWidth] = useState(0);
   const { weekly } = uptime;
   const min = Math.min(...weekly);

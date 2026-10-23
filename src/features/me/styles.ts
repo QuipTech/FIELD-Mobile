@@ -41,8 +41,6 @@ export const styles = StyleSheet.create({
   splitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   baselineRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   hairline: { height: 1, backgroundColor: colors.divider, marginVertical: spacing.xxs },
-  actions: { flexDirection: 'row', gap: spacing.sm },
-  action: { flex: 1, minHeight: 46 },
   compactButton: { minHeight: 40, paddingHorizontal: 14 },
 
   // Section headings

@@ -13,12 +13,12 @@ export type ProfileSummaryProps = {
   name: string;
   email: string;
   initials: string;
-  role: string;
+  isAdmin: boolean;
   site: string;
 };
 
 /** Avatar, name, account email and role · site chip. */
-export function ProfileSummary({ name, email, initials, role, site }: ProfileSummaryProps) {
+export function ProfileSummary({ name, email, initials, isAdmin, site }: ProfileSummaryProps) {
   return (
     <View style={styles.profile}>
       <View style={styles.avatar} accessibilityElementsHidden importantForAccessibility="no">
@@ -34,7 +34,10 @@ export function ProfileSummary({ name, email, initials, role, site }: ProfileSum
           </Text>
         )}
         <View style={styles.rolePill}>
-          <Pill label={`${role} · ${site}`} tone="brand" />
+          <Pill
+            label={[isAdmin ? 'Admin' : 'Technician', site].filter(Boolean).join(' · ')}
+            tone={isAdmin ? 'brand' : 'neutral'}
+          />
         </View>
       </View>
     </View>

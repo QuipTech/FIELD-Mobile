@@ -14,17 +14,20 @@ import {
 import { useMemo } from 'react';
 
 import type { PillTone } from '@/components/Pill/Pill';
-import { useEntryLog } from '@/features/capture/store';
-import { sampleRecords } from './sampleRecords';
+import { pendingEntries, useOutbox } from '@/offline/outbox';
+import { useMachineComponents, useMachineHistory } from './api';
+import { useMachineManuals } from './manualsApi';
+import { useSnapshots } from './snapshots';
 
 type Kind = { label: string; icon: LucideIcon; tone: PillTone };
 
-export type EntryType = 'repair' | 'inspection' | 'fault' | 'service';
+export type EntryType = 'repair' | 'inspection' | 'fault' | 'service' | 'note';
 export const ENTRY_TYPE: Record<EntryType, Kind & { plural: string }> = {
   repair: { label: 'Repair', plural: 'Repairs', icon: Wrench, tone: 'brand' },
   inspection: { label: 'Inspection', plural: 'Inspections', icon: Eye, tone: 'neutral' },
   fault: { label: 'Fault', plural: 'Faults', icon: TriangleAlert, tone: 'amber' },
   service: { label: 'Service', plural: 'Services', icon: ClipboardList, tone: 'neutral' },
+  note: { label: 'Note', plural: 'Notes', icon: FileText, tone: 'muted' },
 };
 
 export type ConfigKind = 'partSwap' | 'firmware' | 'bulletin';
@@ -62,6 +65,10 @@ export type TimelineEntry = {
   photos?: number;
   /** Local photo files for entries captured on this device. */
   photoUris?: string[];
+  /** Logged on this device and still waiting to upload. */
+  pending?: boolean;
+  /** The API refused it; see Offline & sync. */
+  failed?: boolean;
 };
 
 export type ConfigChange = {
@@ -79,6 +86,8 @@ export type MachineManual = {
   /** e.g. "Rev 12 · 340 pages". */
   meta: string;
   offline: boolean;
+  /** Knowledge document it opens in the document viewer. */
+  documentId?: string;
   /** Readable in-app (M7) when set; otherwise it opens in the document viewer. */
   articleId?: string;
 };
@@ -90,12 +99,20 @@ export type MachineRecords = {
   manuals: MachineManual[];
 };
 
-/** A machine's records, with entries logged on this device (Capture) on top of its history. */
+/** A machine's records: components, history (queued entries first), snapshots and manuals. */
 export function useMachineRecords(id: string | undefined): MachineRecords {
-  const logged = useEntryLog((s) => s.entries);
-  return useMemo(() => {
-    const base = sampleRecords(id);
-    const mine = logged.filter((e) => e.machineId === id);
-    return mine.length > 0 ? { ...base, history: [...mine, ...base.history] } : base;
-  }, [id, logged]);
+  const queued = useOutbox((s) => s.items);
+  const components = useMachineComponents(id);
+  const history = useMachineHistory(id);
+  const snapshots = useSnapshots(id);
+  const { manuals } = useMachineManuals(id);
+  return useMemo(
+    () => ({
+      components: components.data ?? [],
+      history: [...pendingEntries(queued, id), ...(history.data ?? [])],
+      configuration: snapshots.data ?? [],
+      manuals,
+    }),
+    [id, queued, components.data, history.data, snapshots.data, manuals],
+  );
 }

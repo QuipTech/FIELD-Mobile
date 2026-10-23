@@ -17,7 +17,7 @@ export function MachineHero({ machine }: { machine: Machine }) {
         source={{ uri: machine.photoUrl }}
         style={styles.heroImage}
         resizeMode="cover"
-        accessibilityLabel={`Photo of ${machine.id}`}
+        accessibilityLabel={`Photo of ${machine.label}`}
       />
     );
   }

@@ -1,33 +1,49 @@
-import { ScanLine, SearchX } from 'lucide-react-native';
+import { SearchX, Truck } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandCard } from '@/components/BrandCard/BrandCard';
 import { EmptyPanel } from '@/components/EmptyPanel/EmptyPanel';
+import { ErrorState } from '@/components/ErrorState/ErrorState';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { Pill } from '@/components/Pill/Pill';
-import { SearchField } from '@/components/SearchField/SearchField';
+import { SkeletonList } from '@/components/Skeleton/SkeletonList';
 import { Text } from '@/components/Text/Text';
 import { formatHours } from '@/lib/format';
-import { colors } from '@/theme';
 import { MACHINE_STATUS, searchMachines, type Machine } from './data';
 import { MachineFilters, type Filters } from './MachineFilters';
 import { MachineIcon } from './MachineParts';
+import { scopeLine, SearchBar } from './MachineSearchBar';
 import { styles } from './styles';
 
 export type MachinesListProps = {
   machines: Machine[];
-  /** The user's site; the list starts filtered to it. */
+  /** The user's site; the list starts filtered to it ('all' when unknown). */
   homeSite: string;
   isSample?: boolean;
+  /** First load in progress (no machines yet). */
+  loading?: boolean;
+  /** Load failed and nothing is cached: shown with a retry. */
+  error?: unknown;
+  onRetry?: () => void;
   onScan: () => void;
+  /** Admins see the whole fleet and can add machines; technicians see their sites only. */
+  isAdmin?: boolean;
+  onAddMachine?: () => void;
   onNearMe: () => void;
   onOpenMachine: (id: string) => void;
 };
 
 /** M3 Machine search & filter (the Machines tab). */
-export function MachinesList({ machines, homeSite, isSample, ...props }: MachinesListProps) {
+export function MachinesList({
+  machines,
+  homeSite,
+  isSample,
+  isAdmin,
+  onAddMachine,
+  ...props
+}: MachinesListProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const initial: Filters = { site: homeSite, make: 'all', status: 'all' };
@@ -44,22 +60,13 @@ export function MachinesList({ machines, homeSite, isSample, ...props }: Machine
   return (
     <View style={styles.root}>
       <MeshBackground spots={APP_MESH} />
-      <View style={[styles.searchBar, { paddingTop: insets.top + 8 }]}>
-        <SearchField
-          value={query}
-          onChange={setQuery}
-          label="Search assets"
-          style={styles.search}
-        />
-        <Pressable
-          onPress={props.onScan}
-          style={({ pressed }) => [styles.scan, pressed && styles.scanPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Scan asset tag"
-        >
-          <ScanLine size={22} color={colors.onAccent} strokeWidth={2} />
-        </Pressable>
-      </View>
+      <SearchBar
+        query={query}
+        onQuery={setQuery}
+        topInset={insets.top}
+        onScan={props.onScan}
+        onAddMachine={isAdmin ? onAddMachine : undefined}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -72,29 +79,21 @@ export function MachinesList({ machines, homeSite, isSample, ...props }: Machine
           onChange={update}
           onNearMe={props.onNearMe}
         />
-        {visible.length === 0 ? (
-          <EmptyPanel
-            icon={SearchX}
-            title="No machines match"
-            message="Try another search, or clear the filters to see the whole fleet."
-            action={{
-              label: 'Clear filters',
-              onPress: () => {
-                setQuery('');
-                setFilters({ site: 'all', make: 'all', status: 'all' });
-              },
-            }}
-          />
-        ) : (
-          visible.map((m) => (
-            <MachineRow
-              key={m.id}
-              machine={m}
-              showSite={filters.site === 'all'}
-              onPress={() => props.onOpenMachine(m.id)}
-            />
-          ))
+        {machines.length > 0 && (
+          <Text variant="caption" color="inkMuted">
+            {scopeLine(machines, !!isAdmin)}
+          </Text>
         )}
+        <ListBody
+          {...props}
+          fleetSize={machines.length}
+          visible={visible}
+          showSite={filters.site === 'all'}
+          onClearFilters={() => {
+            setQuery('');
+            setFilters({ site: 'all', make: 'all', status: 'all' });
+          }}
+        />
         {isSample && (
           <Text variant="caption" color="inkSubtle" style={styles.footnote}>
             Sample fleet — live machines arrive with the API.
@@ -102,6 +101,57 @@ export function MachinesList({ machines, homeSite, isSample, ...props }: Machine
         )}
       </ScrollView>
     </View>
+  );
+}
+
+/** Loading, error, empty fleet, no matches, or the matching rows. */
+function ListBody({
+  loading,
+  error,
+  onRetry,
+  fleetSize,
+  visible,
+  showSite,
+  onClearFilters,
+  onOpenMachine,
+}: Pick<MachinesListProps, 'loading' | 'error' | 'onRetry' | 'onOpenMachine'> & {
+  fleetSize: number;
+  visible: Machine[];
+  showSite: boolean;
+  onClearFilters: () => void;
+}) {
+  if (loading) return <SkeletonList rows={5} />;
+  if (error) return <ErrorState error={error} onRetry={onRetry} />;
+  if (fleetSize === 0) {
+    return (
+      <EmptyPanel
+        icon={Truck}
+        title="No machines yet"
+        message="Machines added to your company's fleet will show here."
+      />
+    );
+  }
+  if (visible.length === 0) {
+    return (
+      <EmptyPanel
+        icon={SearchX}
+        title="No machines match"
+        message="Try another search, or clear the filters to see the whole fleet."
+        action={{ label: 'Clear filters', onPress: onClearFilters }}
+      />
+    );
+  }
+  return (
+    <>
+      {visible.map((m) => (
+        <MachineRow
+          key={m.id}
+          machine={m}
+          showSite={showSite}
+          onPress={() => onOpenMachine(m.id)}
+        />
+      ))}
+    </>
   );
 }
 
@@ -120,11 +170,11 @@ function MachineRow({
     .filter(Boolean)
     .join(' · ');
   return (
-    <BrandCard onPress={onPress} accessibilityLabel={`${m.id}. ${caption}. ${status.label}`}>
+    <BrandCard onPress={onPress} accessibilityLabel={`${m.label}. ${caption}. ${status.label}`}>
       <View style={styles.row}>
         <MachineIcon status={m.status} />
         <View style={styles.rowText}>
-          <Text style={styles.rowTitle}>{m.id}</Text>
+          <Text style={styles.rowTitle}>{m.label}</Text>
           <Text variant="caption" color="inkMuted" numberOfLines={1}>
             {caption}
           </Text>

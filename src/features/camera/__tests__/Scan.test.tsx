@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { machineIdFromCode, SAMPLE_MACHINES, type Machine } from '@/features/machines/data';
+import { machineIdFromCode, type Machine } from '@/features/machines/data';
+import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { ScanScreen } from '../ScanScreen';
 
 // A build without the camera's native module: the screen must still work by typing.

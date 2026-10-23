@@ -1,9 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { SAMPLE_MACHINES, type Machine } from '@/features/machines/data';
+import { type Machine } from '@/features/machines/data';
+import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { AskAi, type AskAiProps } from '../AskAi';
-import { SAMPLE_THREAD, type ChatMessage } from '../data';
+import { SAMPLE_THREAD, SAMPLE_USAGE } from '@/test/fixtures/assistant';
+import type { ChatMessage } from '../data';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -11,12 +13,14 @@ const metrics = {
 };
 const FLEET: Machine[] = Object.values(SAMPLE_MACHINES);
 
-const setup = async (messages: ChatMessage[] = SAMPLE_THREAD, prompt?: string) => {
+const setup = async (messages: ChatMessage[] = SAMPLE_THREAD, prompt?: string, isAdmin = false) => {
   const props: AskAiProps = {
     machines: FLEET,
     machineId: 'HT-2201',
     onMachineChange: jest.fn(),
     messages,
+    isAdmin,
+    usage: SAMPLE_USAGE[isAdmin ? 'org' : 'mine'],
     prompt,
     onSend: jest.fn(),
     onNewChat: jest.fn(),
@@ -78,5 +82,18 @@ describe('AskAi', () => {
     expect(screen.getByLabelText('Ask a question')).toHaveDisplayValue(
       'Drill rod change procedure',
     );
+  });
+
+  it('shows customers their own usage and hides answer diagnostics', async () => {
+    await setup();
+    expect(screen.getByText('142 of 500 queries this month')).toBeTruthy();
+    expect(screen.queryByText(/^Admin · Confidence/)).toBeNull();
+  });
+
+  it('shows admins org usage, overage and answer diagnostics', async () => {
+    await setup(SAMPLE_THREAD, undefined, true);
+    expect(screen.getByText('Org: 3,820 of 5,000 queries')).toBeTruthy();
+    expect(screen.getByText(/^Overage \$0\.04 each/)).toBeTruthy();
+    expect(screen.getByText('Admin · Confidence 0.91 · 4 sections · logged')).toBeTruthy();
   });
 });

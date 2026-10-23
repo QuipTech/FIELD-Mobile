@@ -8,7 +8,7 @@ const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
-const NAMES = ['index', 'machines', 'ask-ai', 'cases', 'me'];
+const NAMES = ['index', 'machines', 'knowledge', 'ask-ai', 'cases'];
 
 describe('TabBar', () => {
   it('shows every tab, marks the current one and navigates', async () => {
@@ -24,9 +24,9 @@ describe('TabBar', () => {
     );
 
     expect(screen.getByRole('tab', { name: 'Home' })).toBeSelected();
-    expect(screen.getByRole('tab', { name: 'Ask AI' })).not.toBeSelected();
+    expect(screen.getByRole('tab', { name: 'AI Assistant' })).not.toBeSelected();
 
-    await fireEvent.press(screen.getByRole('tab', { name: 'Ask AI' }));
+    await fireEvent.press(screen.getByRole('tab', { name: 'AI Assistant' }));
     expect(navigation.navigate).toHaveBeenCalledWith('ask-ai');
     await fireEvent.press(screen.getByRole('tab', { name: 'Home' }));
     expect(navigation.navigate).toHaveBeenCalledTimes(1); // already on Home

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { SAMPLE_ME, type MeData } from '../data';
+import { SAMPLE_ME, SAMPLE_TEAM } from '@/test/fixtures/me';
+import type { MeData } from '../data';
 import { Me, type MeProps } from '../Me';
 
 const metrics = {
@@ -9,8 +10,10 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-const setup = async (data: Partial<MeData> = {}) => {
+const setup = async (data: Partial<MeData> = {}, isAdmin = false) => {
   const props: MeProps = {
+    isAdmin,
+    team: isAdmin ? SAMPLE_TEAM : undefined,
     name: 'Jonah Okoye',
     email: 'jonah@quiptech.com.au',
     initials: 'JO',
@@ -38,16 +41,33 @@ describe('Me', () => {
     expect(screen.getByText(/Version 1\.0\.0/)).toBeTruthy();
   });
 
+  it('shows a technician their plan, managed by the admin', async () => {
+    await setup();
+    expect(screen.queryByRole('button', { name: /^Team & roles/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Billing & plan/ })).toBeNull();
+  });
+
+  it('gives admins team and billing management', async () => {
+    const props = await setup({}, true);
+    expect(screen.getByText('Admin · Pit 4')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Plan & usage/ })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Team & roles, 42 users · 3 sites' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Billing & plan, Standard · 42 assets' }),
+    );
+    expect(jest.mocked(props.onNavigate).mock.calls.map(([to]) => to)).toEqual(['team', 'billing']);
+  });
+
   it('opens billing and the settings rows', async () => {
     const props = await setup();
-    await fireEvent.press(screen.getByRole('button', { name: 'Billing' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Upgrade' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Plan & usage, Standard · managed by your admin' }),
+    );
     await fireEvent.press(screen.getByRole('button', { name: 'Offline downloads, 12 docs' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Language, English' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Replay welcome guide' }));
     expect(jest.mocked(props.onNavigate).mock.calls.map(([to]) => to)).toEqual([
       'billing',
-      'upgrade',
       'downloads',
       'language',
       'replayGuide',

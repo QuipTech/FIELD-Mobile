@@ -1,21 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { useReducedMotion } from '@/theme/motion';
 
-/** False until checked, and whenever the user has Reduce Motion on; follows live changes. */
+/** @deprecated Use `useReducedMotion` from `@/theme`. False while Reduce Motion is on. */
 export function useMotionAllowed() {
-  const [allowed, setAllowed] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (!cancelled) setAllowed(!reduce);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (reduce) =>
-      setAllowed(!reduce),
-    );
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, []);
-  return allowed;
+  return !useReducedMotion();
 }

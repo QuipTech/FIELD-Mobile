@@ -11,10 +11,22 @@ import {
   signUp,
 } from 'aws-amplify/auth';
 
+import { queryClient } from '@/lib/queryClient';
+import { useOutbox } from '@/offline/outbox';
+import { endApiSession, syncApiSession, type CompanyProfile } from './apiSession';
 import { isAuthError } from './errors';
 import { useSession } from './session';
 
-const markSignedIn = () => useSession.getState().setStatus('signedIn');
+/**
+ * Opens the API session for the Cognito user who just signed in, and moves the gate on:
+ * into the app, or to "Finish setting up" when the API still needs company and phone.
+ */
+export async function establishSession(profile?: CompanyProfile) {
+  const status = await syncApiSession(profile);
+  useSession.getState().setStatus(status);
+}
+
+const markSignedIn = establishSession;
 
 /** What the UI should do after a sign-in attempt. */
 export type SignInOutcome =
@@ -29,7 +41,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
     const { nextStep } = await signIn({ username: email, password });
     switch (nextStep.signInStep) {
       case 'DONE':
-        markSignedIn();
+        await markSignedIn();
         return 'done';
       case 'CONFIRM_SIGN_UP':
         await resendSignUpCode({ username: email });
@@ -44,7 +56,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   } catch (error) {
     // A session survived (e.g. hydrate raced the form) — treat as signed in.
     if (isAuthError(error, 'UserAlreadyAuthenticatedException')) {
-      markSignedIn();
+      await markSignedIn();
       return 'done';
     }
     throw error;
@@ -61,14 +73,14 @@ export type SocialProvider = 'Google' | 'Apple';
 export async function signInWithProvider(provider: SocialProvider): Promise<boolean> {
   try {
     await signInWithRedirect({ provider });
-    markSignedIn();
+    await markSignedIn();
     return true;
   } catch (error) {
     if (isAuthError(error, 'OAuthSignInException') && (error as Error).message === 'canceled') {
       return false;
     }
     if (isAuthError(error, 'UserAlreadyAuthenticatedException')) {
-      markSignedIn();
+      await markSignedIn();
       return true;
     }
     throw error;
@@ -79,7 +91,7 @@ export async function signInWithProvider(provider: SocialProvider): Promise<bool
 export async function completeNewPassword(newPassword: string) {
   const { nextStep } = await confirmSignIn({ challengeResponse: newPassword });
   if (nextStep.signInStep !== 'DONE') throw new Error(`Unsupported step ${nextStep.signInStep}`);
-  markSignedIn();
+  await markSignedIn();
 }
 
 export type SignUpDetails = {
@@ -111,12 +123,17 @@ export async function registerAccount(details: SignUpDetails) {
  * Verifies the sign-up email code. Returns true when the user is now signed in (sign-up in this
  * app session); false when they must sign in again (e.g. verifying after a later sign-in attempt).
  */
-export async function verifyEmail(email: string, code: string): Promise<boolean> {
+export async function verifyEmail(
+  email: string,
+  code: string,
+  profile?: CompanyProfile,
+): Promise<boolean> {
   const { nextStep } = await confirmSignUp({ username: email, confirmationCode: code });
   if (nextStep.signUpStep !== 'COMPLETE_AUTO_SIGN_IN') return false;
   const result = await autoSignIn();
   if (result.nextStep.signInStep !== 'DONE') return false;
-  markSignedIn();
+  // The sign-up form already collected company and phone, so the API can create the user now.
+  await establishSession(profile);
   return true;
 }
 
@@ -138,6 +155,9 @@ export const completePasswordReset = (email: string, code: string, newPassword: 
   confirmResetPassword({ username: email, confirmationCode: code, newPassword });
 
 export async function signOutUser() {
+  await endApiSession();
   await signOut();
+  queryClient.clear(); // the next user must not see this user's cached data
+  useOutbox.getState().clear(); // nor send this user's queued writes with their own token
   useSession.getState().setStatus('signedOut');
 }

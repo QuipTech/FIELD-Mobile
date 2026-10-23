@@ -1,4 +1,11 @@
-import { History, Plus, Settings2 } from 'lucide-react-native';
+import {
+  Download,
+  GitCompareArrows,
+  History,
+  Plus,
+  RotateCcw,
+  Settings2,
+} from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { BrandButton } from '@/components/BrandButton/BrandButton';
@@ -15,6 +22,7 @@ import {
   type EntryType,
   type TimelineEntry,
 } from './records';
+import { styles } from './styles';
 
 export type HistoryFilter = EntryType | 'all';
 export const HISTORY_FILTERS: FilterOption<HistoryFilter>[] = [
@@ -75,6 +83,8 @@ export type MachineTimelineProps = {
   filter: HistoryFilter;
   onAddEntry: () => void;
   onOpenPhoto: (entry: TimelineEntry, index: number) => void;
+  /** Admin only: export this machine's history. */
+  onExport?: () => void;
 };
 
 /** M5 History timeline for one machine. The Filter control lives in the header (see route). */
@@ -83,16 +93,29 @@ export function MachineTimeline({
   filter,
   onAddEntry,
   onOpenPhoto,
+  onExport,
 }: MachineTimelineProps) {
   const visible = filter === 'all' ? entries : entries.filter((e) => e.type === filter);
   return (
     <DetailScreen
       footer={
-        <BrandButton
-          label="Add entry"
-          icon={<Plus size={18} color={colors.onAccent} strokeWidth={2.25} />}
-          onPress={onAddEntry}
-        />
+        <View style={styles.actions}>
+          <BrandButton
+            label="Add entry"
+            icon={<Plus size={18} color={colors.onAccent} strokeWidth={2.25} />}
+            onPress={onAddEntry}
+            style={styles.action}
+          />
+          {onExport && (
+            <BrandButton
+              variant="outline"
+              label="Export"
+              icon={<Download size={18} color={colors.ink} strokeWidth={2} />}
+              onPress={onExport}
+              style={styles.action}
+            />
+          )}
+        </View>
       }
     >
       {visible.length === 0 ? (
@@ -111,9 +134,43 @@ export function MachineTimeline({
 }
 
 /** M5.5 Configuration history: part swaps, firmware and bulletins applied. */
-export function ConfigurationTimeline({ changes }: { changes: ConfigChange[] }) {
+export function ConfigurationTimeline({
+  changes,
+  onCompare,
+  onRestore,
+}: {
+  changes: ConfigChange[];
+  /** Opens M5b with the previous snapshot against the latest. */
+  onCompare?: () => void;
+  /** Admin only: roll the machine back to an earlier snapshot. */
+  onRestore?: () => void;
+}) {
+  const compare = onCompare && changes.length > 1;
+  const restore = onRestore && changes.length > 0;
   return (
-    <DetailScreen>
+    <DetailScreen
+      footer={
+        compare || restore ? (
+          <View style={styles.footerStack}>
+            {compare && (
+              <BrandButton
+                label="Compare snapshots"
+                icon={<GitCompareArrows size={18} color={colors.onAccent} strokeWidth={2} />}
+                onPress={onCompare}
+              />
+            )}
+            {restore && (
+              <BrandButton
+                variant="outline"
+                label="Restore a snapshot"
+                icon={<RotateCcw size={18} color={colors.ink} strokeWidth={2} />}
+                onPress={onRestore}
+              />
+            )}
+          </View>
+        ) : undefined
+      }
+    >
       {changes.length === 0 ? (
         <EmptyPanel
           icon={Settings2}

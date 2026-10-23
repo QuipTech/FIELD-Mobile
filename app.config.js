@@ -23,7 +23,7 @@ const STAGING = {
 const ENVIRONMENTS = {
   development: STAGING,
   staging: STAGING,
-  // TODO(confirm): production API URL and Cognito pool. Uses staging values until provided.
+  // Deliberately staging: every build, including production, talks to the staging API.
   production: STAGING,
 };
 
@@ -56,7 +56,7 @@ module.exports = ({ config }) => {
     version: APP_VERSION,
     orientation: 'portrait',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic', // Light / Dark / System from Profile
     ios: {
       supportsTablet: true,
       bundleIdentifier: `${BASE_ID}${suffix}`,
@@ -86,6 +86,15 @@ module.exports = ({ config }) => {
             'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
           // Photos only for now; no video recording, so no microphone on Android.
           recordAudioAndroid: false,
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'Allow $(PRODUCT_NAME) to attach photos to your Ask AI questions.',
+          cameraPermission:
+            'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
+          microphonePermission: false,
         },
       ],
       [

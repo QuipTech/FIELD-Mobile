@@ -1,28 +1,47 @@
-import { StyleSheet } from 'react-native';
+import { borders, layout, makeStyles, radii, spacing, typeScale } from '@/theme';
 
-import { borders, colors, layout, radius, spacing, typeScale } from '@/theme';
-
-export const styles = StyleSheet.create({
-  wrapper: { gap: spacing.xxs },
+export const useStyles = makeStyles((c) => ({
+  wrapper: { gap: 6 },
   field: {
     minHeight: layout.inputHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: borders.strong,
-    borderColor: colors.line,
-    borderRadius: radius,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.snug,
+    backgroundColor: c.card,
+    borderWidth: borders.control,
+    borderColor: c.borderStrong,
+    borderRadius: radii.control,
   },
-  focused: { borderColor: colors.accent },
-  error: { borderColor: colors.accentText },
-  disabled: { backgroundColor: colors.neutralBg, borderColor: colors.lineSoft },
+  focused: { borderColor: c.primary },
+  error: { borderColor: c.danger },
+  disabled: { backgroundColor: c.fill, borderColor: c.border },
   input: {
     ...typeScale.body,
     flex: 1,
-    color: colors.ink,
-    paddingHorizontal: spacing.sm,
+    alignSelf: 'stretch',
+    color: c.ink,
     paddingVertical: spacing.sm,
   },
   multiline: { minHeight: 120, textAlignVertical: 'top' },
-  accessory: { paddingRight: spacing.xxs },
-});
+  // OtpInput
+  otpRow: { flexDirection: 'row', gap: spacing.xs },
+  otpBox: {
+    flex: 1,
+    height: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.card,
+    borderWidth: borders.control,
+    borderColor: c.borderStrong,
+    borderRadius: radii.control,
+  },
+  otpActive: {
+    borderColor: c.primary,
+    // The design's 3 px tint ring around the active box.
+    outlineColor: c.primaryTint,
+    outlineWidth: 3,
+    outlineStyle: 'solid',
+  },
+  otpHidden: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0.011 },
+}));

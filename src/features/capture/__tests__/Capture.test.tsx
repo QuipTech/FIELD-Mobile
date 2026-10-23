@@ -1,10 +1,16 @@
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { SAMPLE_MACHINES, type Machine } from '@/features/machines/data';
+import { type Machine } from '@/features/machines/data';
+import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { useMachineRecords } from '@/features/machines/records';
+import { API_HISTORY, installFakeApi } from '@/test/fakeApi';
 import { CaptureFlow } from '../CaptureFlow';
-import { emptyDraft, toEntry, useEntryLog } from '../store';
+import { useOutbox } from '@/offline/outbox';
+import { queueEntry } from '../queue';
+import { emptyDraft, toEntry } from '../store';
 
 jest.mock('@/features/camera/nativeCamera', () => ({ expoCamera: null }));
 
@@ -14,7 +20,7 @@ const metrics = {
 };
 const FLEET: Machine[] = Object.values(SAMPLE_MACHINES);
 
-beforeEach(() => useEntryLog.setState({ entries: [] }));
+beforeEach(() => useOutbox.setState({ items: [] }));
 
 describe('CaptureFlow', () => {
   it('walks details → photos → notes and saves the draft', async () => {
@@ -55,16 +61,14 @@ describe('CaptureFlow', () => {
 
 describe('logged entries', () => {
   it('builds a timeline entry and shows it first in the machine history', async () => {
-    const entry = toEntry(
-      {
-        ...emptyDraft({ title: ' Accumulator recharged ' }),
-        machineId: 'HT-2201',
-        notes: 'Held 15 min.',
-        hours: '14230',
-        photos: ['file:///a.jpg'],
-      },
-      new Date('2026-10-17T09:00:00Z'),
-    );
+    const draft = {
+      ...emptyDraft({ title: ' Accumulator recharged ' }),
+      machineId: 'HT-2201',
+      notes: 'Held 15 min.',
+      hours: '14230',
+      photos: ['file:///a.jpg'],
+    };
+    const entry = toEntry(draft, new Date('2026-10-17T09:00:00Z'));
     expect(entry).toMatchObject({
       title: 'Accumulator recharged',
       detail: 'Held 15 min. · Hour meter 14,230 h',
@@ -72,10 +76,22 @@ describe('logged entries', () => {
       photos: 1,
     });
 
-    const { result } = await renderHook(() => useMachineRecords('HT-2201'));
-    const before = result.current.history.length;
-    await act(() => useEntryLog.getState().add(entry));
-    expect(result.current.history).toHaveLength(before + 1);
-    expect(result.current.history[0]?.title).toBe('Accumulator recharged');
+    installFakeApi();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = await renderHook(() => useMachineRecords('HT-2201'), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+    // The machine's history from the API first, then the entry logged on this device on top.
+    await waitFor(() => expect(result.current.history).toHaveLength(API_HISTORY.length));
+    await act(() => {
+      queueEntry(draft);
+    });
+    expect(result.current.history).toHaveLength(API_HISTORY.length + 1);
+    expect(result.current.history[0]).toMatchObject({
+      title: 'Accumulator recharged',
+      pending: true,
+    });
   });
 });

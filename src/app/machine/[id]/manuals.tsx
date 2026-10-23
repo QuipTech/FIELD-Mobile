@@ -1,19 +1,22 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-import { MachineNotFound, manualActions } from '@/features/machines/MachineParts';
-import { useMachine } from '@/features/machines/data';
+import { MachineGate } from '@/features/machines/MachineGate';
+import { useManualActions } from '@/features/machines/manualsApi';
 import { MachineManuals } from '@/features/machines/Manuals';
 import { useMachineRecords } from '@/features/machines/records';
 
 export default function MachineManualsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const machine = useMachine(id);
   const { manuals } = useMachineRecords(id);
-  if (!machine) return <MachineNotFound />;
+  const actions = useManualActions(id);
   return (
-    <>
-      <Stack.Screen options={{ title: `Manuals · ${machine.id}` }} />
-      <MachineManuals manuals={manuals} {...manualActions} />
-    </>
+    <MachineGate id={id}>
+      {(machine) => (
+        <>
+          <Stack.Screen options={{ title: `Manuals · ${machine.label}` }} />
+          <MachineManuals manuals={manuals} {...actions} />
+        </>
+      )}
+    </MachineGate>
   );
 }

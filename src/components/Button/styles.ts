@@ -1,33 +1,43 @@
-import { StyleSheet } from 'react-native';
+import { borders, layout, makeStyles, radii, spacing } from '@/theme';
 
-import { borders, colors, layout, radius, spacing } from '@/theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles((c) => ({
   base: {
     minHeight: layout.buttonHeight,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // label flush-left, icon pushed right
-    gap: spacing.sm,
-    borderRadius: radius,
-    borderWidth: borders.strong,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.control,
+    borderWidth: borders.control,
+  },
+  small: {
+    minHeight: layout.smallButtonHeight,
+    paddingHorizontal: spacing.snug,
+    borderRadius: radii.small,
   },
   fullWidth: { alignSelf: 'stretch' },
-  primary: { backgroundColor: colors.accent, borderColor: colors.accent },
-  primaryPressed: { backgroundColor: colors.accentPressed, borderColor: colors.accentPressed },
-  secondary: { backgroundColor: 'transparent', borderColor: colors.line },
-  secondaryPressed: { backgroundColor: colors.neutralBg },
-  ghost: { backgroundColor: 'transparent', borderColor: 'transparent', paddingHorizontal: 0 },
-  ghostPressed: { opacity: 0.6 },
+  primary: { backgroundColor: c.button, borderColor: c.button },
+  primaryPressed: { backgroundColor: c.buttonPressed, borderColor: c.buttonPressed },
+  secondary: { backgroundColor: c.card, borderColor: c.borderStrong },
+  secondaryPressed: { backgroundColor: c.fill },
+  ghost: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    paddingHorizontal: spacing.sm,
+  },
+  ghostPressed: { backgroundColor: c.fill },
+  danger: { backgroundColor: c.card, borderColor: c.borderStrong },
+  dangerPressed: { backgroundColor: c.dangerTint },
+  disabled: { backgroundColor: c.fill, borderColor: c.fill },
   icon: {
     width: layout.minTapTarget,
-    minHeight: layout.minTapTarget,
-    paddingHorizontal: 0,
+    height: layout.minTapTarget,
+    borderRadius: radii.control,
+    alignItems: 'center',
     justifyContent: 'center',
-    borderColor: 'transparent',
   },
-  iconPressed: { backgroundColor: colors.neutralBg },
-  disabled: { backgroundColor: colors.neutralBg, borderColor: colors.neutralBg },
-  label: { flexShrink: 1 },
-});
+  iconPressed: { backgroundColor: c.fill },
+  badgeLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  label: { flexShrink: 1, textAlign: 'center' },
+}));

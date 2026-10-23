@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { motion } from '@/theme';
+import { durations } from '@/theme/motion';
 
 export type ToastTone = 'neutral' | 'success' | 'error';
 export type ToastItem = { id: number; message: string; tone: ToastTone };
@@ -19,7 +19,8 @@ export const useToastStore = create<ToastState>((set) => ({
   show: (message, tone = 'neutral') => {
     if (timer) clearTimeout(timer);
     set({ current: { id: nextId++, message, tone } });
-    timer = setTimeout(() => set({ current: null }), motion.toastDuration);
+    // Hold 2.5 s after the 200 ms drop-in, then lift out.
+    timer = setTimeout(() => set({ current: null }), durations.small + durations.toastHold);
   },
   dismiss: () => {
     if (timer) clearTimeout(timer);

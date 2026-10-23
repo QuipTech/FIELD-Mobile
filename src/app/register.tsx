@@ -18,7 +18,11 @@ export default function RegisterRoute() {
       onSubmit={(values) =>
         runAuth(async () => {
           await registerAccount(values);
-          setFlow({ email: values.email, code: '' });
+          setFlow({
+            email: values.email,
+            code: '',
+            profile: { companyName: values.company, phoneNumber: values.phone },
+          });
           router.push('/verify-email');
         })
       }

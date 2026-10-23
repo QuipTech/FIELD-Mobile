@@ -1,26 +1,25 @@
-import { StyleSheet } from 'react-native';
+import { borders, makeStyles, radii, spacing } from '@/theme';
 
-import { borders, colors, elevation, radius, spacing } from '@/theme';
-
-export const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: 'flex-end' },
-  scrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.scrim },
-  panel: {
-    maxHeight: '90%',
-    backgroundColor: colors.ground,
-    borderTopWidth: borders.strong,
-    borderTopColor: colors.line,
-    borderRadius: radius,
-    ...elevation.sheet,
+export const useStyles = makeStyles((c) => ({
+  background: {
+    backgroundColor: c.card,
+    borderTopLeftRadius: radii.sheet,
+    borderTopRightRadius: radii.sheet,
   },
+  grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: c.borderStrong },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingLeft: spacing.md,
     paddingRight: spacing.xxs,
-    paddingVertical: spacing.xxs,
   },
   title: { flex: 1 },
-  body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.md },
-});
+  body: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, gap: spacing.md },
+  footer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: borders.hairline,
+    borderTopColor: c.border,
+    backgroundColor: c.card,
+  },
+}));

@@ -1,29 +1,31 @@
 import type { ReactNode } from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { styles } from './styles';
+import { borders, elevation, makeStyles, radii, spacing } from '@/theme';
+import { PressableScale } from '../PressableScale/PressableScale';
 
 export type CardProps = {
   children: ReactNode;
   onPress?: () => void;
   /** Required when `onPress` is set. */
   accessibilityLabel?: string;
-  /** Red top rule for emphasis (e.g. overdue SLA). */
-  emphasis?: boolean;
+  /** False for cards that hold full-bleed rows (ListRow draws its own padding). */
+  padded?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-/** White panel with a 2px top rule. Pressable when `onPress` is given. */
+/** `.card`: radius 14, hairline border, soft lift in light mode. Pressable when `onPress` is set. */
 export function Card({
   children,
   onPress,
   accessibilityLabel,
-  emphasis,
+  padded = true,
   style,
   testID,
 }: CardProps) {
-  const base = [styles.card, emphasis && styles.accent, style];
+  const styles = useStyles();
+  const base = [styles.card, padded && styles.padded, style];
   if (!onPress) {
     return (
       <View style={base} testID={testID}>
@@ -32,7 +34,7 @@ export function Card({
     );
   }
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
@@ -40,6 +42,19 @@ export function Card({
       style={({ pressed }) => [base, pressed && styles.pressed]}
     >
       {children}
-    </Pressable>
+    </PressableScale>
   );
 }
+
+const useStyles = makeStyles((c) => ({
+  card: {
+    backgroundColor: c.card,
+    borderWidth: borders.hairline,
+    borderColor: c.border,
+    borderRadius: radii.card,
+    shadowColor: c.shadow,
+    ...elevation.card,
+  },
+  padded: { padding: spacing.snug, gap: spacing.xs },
+  pressed: { backgroundColor: c.fill },
+}));

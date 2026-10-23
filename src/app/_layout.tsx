@@ -2,29 +2,40 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
 
+import { startAccessSync } from '@/auth/access';
 import { configureAmplify } from '@/auth/amplify';
+import { registerApiTokenProvider } from '@/auth/apiSession';
+import { signOutUser } from '@/auth/flows';
+import { runAuth } from '@/auth/runAuth';
 import { hydrateSession, listenForAuthEvents, useSession } from '@/auth/session';
 import { BrandSplash } from '@/features/splash/BrandSplash';
+import { startOutboxSync } from '@/offline/sync';
 import { AppProviders } from '@/providers/AppProviders';
-import { authHeaderOptions, detailHeaderOptions, stackScreenOptions, useAppFonts } from '@/theme';
+import { hydrateThemePreference, useAppFonts, useNavigationOptions } from '@/theme';
 
-/** Signed-in screens pushed over the tabs (white header, back button, no tab bar). */
+/** Signed-in screens pushed over the tabs (header with back button, no tab bar). */
 const DETAIL_SCREENS = {
-  billing: 'Billing & subscription',
-  upgrade: 'Upgrade plan',
-  'machine-history': 'My machine history',
+  profile: 'Profile',
+  billing: 'Billing & plan',
+  'offline-sync': 'Offline & sync',
   'ai-history': 'AI history',
-  'help/index': 'Help & support',
-  'help/[id]': 'FAQ',
-  'case/[id]': 'Case', // the screen sets "Case #1042" and its status pill
+  'ai-review/[id]': 'Flagged answer',
+  'case/[id]': 'Case', // the screen sets "#1042 …"
+  'new-case': 'New case',
+  'add-machine': 'Add machine',
+  team: 'Team & roles',
+  'team-invite': 'Invite',
   'notifications/index': 'Notifications',
-  'notifications/[id]': 'Notification',
-  // The machine screens set their titles, e.g. "History · HT-2201".
+  // The machine screens set their own titles.
   'machine/[id]/index': 'Machine',
   'machine/[id]/history': 'History',
   'machine/[id]/configuration': 'Configuration',
   'machine/[id]/manuals': 'Manuals',
   'document/[id]': 'Document',
+  'knowledge/brand/[id]': 'Knowledge',
+  'knowledge/category/[id]': 'Category',
+  'machine/[id]/compare': 'Compare snapshots',
+  'machine/[id]/edit': 'Edit machine',
 };
 
 /** Camera screens cover the whole app and draw their own top bar. */
@@ -33,48 +44,72 @@ const CAMERA_SCREEN = {
   presentation: 'fullScreenModal',
   animation: 'slide_from_bottom',
 } as const;
+const BARE = { headerShown: false } as const;
+const FADE = { headerShown: false, animation: 'fade' } as const;
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 configureAmplify();
 
 export default function RootLayout() {
+  return (
+    <AppProviders>
+      <RootStack />
+    </AppProviders>
+  );
+}
+
+function RootStack() {
   const { loaded, error } = useAppFonts();
+  const [themeLoaded, setThemeLoaded] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
   const status = useSession((s) => s.status);
-  const signedIn = status === 'signedIn';
-  // Wait for fonts and the stored Cognito session, so the first screen is the right one.
-  const ready = (loaded || !!error) && status !== 'unknown';
+  const nav = useNavigationOptions();
+  // Wait for fonts, the theme setting and the stored session, so the first screen is right.
+  const ready = (loaded || !!error) && themeLoaded && status !== 'unknown';
 
   useEffect(() => {
+    // API requests carry the API session's token; if it can't be renewed, sign out.
+    registerApiTokenProvider(() => runAuth(signOutUser));
+    hydrateThemePreference().finally(() => setThemeLoaded(true));
     hydrateSession();
-    return listenForAuthEvents();
+    const stopAccess = startAccessSync();
+    const stopOutbox = startOutboxSync();
+    const stopAuth = listenForAuthEvents();
+    return () => {
+      stopAccess();
+      stopOutbox();
+      stopAuth();
+    };
   }, []);
 
-  // BrandSplash renders immediately and hides the native splash once it is laid out
-  // (identical logo card position), then fades out when fonts are ready.
+  // BrandSplash hides the native splash once laid out, then fades when ready.
   // Signed-out users land on onboarding (first available screen when `index` is guarded).
   return (
-    <AppProviders>
+    <>
       {ready && (
-        <Stack screenOptions={stackScreenOptions}>
-          <Stack.Protected guard={signedIn}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack screenOptions={nav.stack}>
+          <Stack.Protected guard={status === 'signedIn'}>
+            <Stack.Screen name="(tabs)" options={BARE} />
             {Object.entries(DETAIL_SCREENS).map(([name, title]) => (
-              <Stack.Screen key={name} name={name} options={detailHeaderOptions(title)} />
+              <Stack.Screen key={name} name={name} options={nav.header(title)} />
             ))}
             <Stack.Screen name="scan" options={CAMERA_SCREEN} />
             <Stack.Screen name="capture" options={CAMERA_SCREEN} />
+            <Stack.Screen name="knowledge/search" options={FADE} />
           </Stack.Protected>
-          <Stack.Protected guard={!signedIn}>
-            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="sign-in" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="register" options={authHeaderOptions('Create your account')} />
-            <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-            <Stack.Screen name="reset-code" options={{ headerShown: false }} />
-            <Stack.Screen name="new-password" options={{ headerShown: false }} />
-            <Stack.Screen name="verify-email" options={{ headerShown: false }} />
-            <Stack.Screen name="two-factor" options={authHeaderOptions('Secure your account')} />
+          <Stack.Protected guard={status === 'profileRequired'}>
+            <Stack.Screen name="complete-profile" options={BARE} />
+          </Stack.Protected>
+          <Stack.Protected guard={status === 'signedOut'}>
+            <Stack.Screen name="onboarding" options={FADE} />
+            <Stack.Screen name="sign-in" options={FADE} />
+            <Stack.Screen name="register" options={nav.authHeader('Create account')} />
+            <Stack.Screen name="forgot-password" options={BARE} />
+            <Stack.Screen name="reset-code" options={BARE} />
+            <Stack.Screen name="new-password" options={BARE} />
+            <Stack.Screen name="verify-email" options={BARE} />
+            <Stack.Screen name="two-factor" options={nav.authHeader('Verify it’s you')} />
           </Stack.Protected>
           {/* Google/Apple return links (Android delivers them as deep links). Must stay after the
               guarded groups: a signed-out launch redirects to the FIRST available screen. */}
@@ -82,6 +117,6 @@ export default function RootLayout() {
         </Stack>
       )}
       {!splashDone && <BrandSplash ready={ready} onFinish={finishSplash} />}
-    </AppProviders>
+    </>
   );
 }

@@ -8,7 +8,7 @@ import { EnterCode } from '@/features/auth/EnterCode';
 
 /** Sign-up email verification (M1d layout). */
 export default function VerifyEmailRoute() {
-  const email = useAuthFlow((s) => s.email);
+  const { email, profile } = useAuthFlow();
   if (!email) return <Redirect href="/sign-in" />;
 
   return (
@@ -16,7 +16,7 @@ export default function VerifyEmailRoute() {
       destination={email}
       onSubmit={(code) =>
         runAuth(async () => {
-          const signedIn = await verifyEmail(email, code);
+          const signedIn = await verifyEmail(email, code, profile);
           if (signedIn) return; // The session gate swaps to the signed-in stack.
           toast.success('Email verified. Sign in to continue.');
           router.dismissTo('/sign-in');

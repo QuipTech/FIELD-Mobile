@@ -46,6 +46,15 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  bellDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
+  },
   avatar: {
     width: 44,
     height: 44,
@@ -123,6 +132,13 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.fill,
   },
+  plan: { marginRight: 2 },
+
+  // Admin KPI tiles (2×2)
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  kpi: { flexBasis: '47%', flexGrow: 1, minHeight: 72, gap: 2 },
+  kpiValue: { fontFamily: fontFamily.medium, fontSize: 28, lineHeight: 32 },
+
   tag: { borderWidth: 1, borderRadius: 6, paddingHorizontal: spacing.xs, paddingVertical: 3 },
   sampleNote: { textAlign: 'center' },
 });

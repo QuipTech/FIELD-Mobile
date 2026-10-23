@@ -1,24 +1,7 @@
-import { create } from 'zustand';
-
 import type { EntryType, TimelineEntry } from '@/features/machines/records';
 import { formatHours } from '@/lib/format';
 
 export type LoggedEntry = TimelineEntry & { machineId: string };
-
-type EntryLog = {
-  /** Newest first. */
-  entries: LoggedEntry[];
-  add: (entry: LoggedEntry) => void;
-};
-
-/**
- * Entries logged on this device this session; machine history and My machine history show them
- * on top. TODO(api): POST entries (with photo uploads) to the machine log and refetch instead.
- */
-export const useEntryLog = create<EntryLog>((set) => ({
-  entries: [],
-  add: (entry) => set((s) => ({ entries: [entry, ...s.entries] })),
-}));
 
 export type CaptureDraft = {
   machineId?: string;

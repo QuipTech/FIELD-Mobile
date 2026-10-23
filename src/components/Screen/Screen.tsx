@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme';
-import { styles } from './styles';
+import { useTheme } from '@/theme';
+import { useStyles } from './styles';
 
 export type ScreenProps = {
   children: ReactNode;
@@ -21,6 +21,8 @@ export function Screen({
   edges = ['left', 'right'],
   ...refresh
 }: ScreenProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <SafeAreaView style={styles.root} edges={edges}>
       {scroll ? (
@@ -32,8 +34,9 @@ export function Screen({
               <RefreshControl
                 refreshing={!!refresh.refreshing}
                 onRefresh={refresh.onRefresh}
-                tintColor={colors.ink}
-                colors={[colors.accent]}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+                progressBackgroundColor={colors.card}
               />
             ) : undefined
           }

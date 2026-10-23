@@ -1,0 +1,56 @@
+import type { Machine } from '@/features/machines/data';
+
+/** The M3 design's sample fleet, for tests and previews. */
+export const SAMPLE_MACHINES = {
+  'HT-2201': {
+    id: 'HT-2201',
+    label: 'HT-2201',
+    make: 'CAT',
+    model: 'CAT 793F',
+    status: 'down',
+    site: 'Pit 4',
+    bench: 'Bench 3',
+    hours: 14208,
+    serial: '4GZ01288',
+  },
+  'LD-0904': {
+    id: 'LD-0904',
+    label: 'LD-0904',
+    make: 'Komatsu',
+    model: 'Komatsu WA900',
+    status: 'due',
+    site: 'Pit 4',
+    hours: 9771,
+    serial: 'A90217',
+  },
+  'DR-4412': {
+    id: 'DR-4412',
+    label: 'DR-4412',
+    make: 'Sandvik',
+    model: 'Sandvik DR410',
+    status: 'ok',
+    site: 'Pit 4',
+    bench: 'Bench 7',
+    serial: 'DR410-0388',
+  },
+  'HT-2188': {
+    id: 'HT-2188',
+    label: 'HT-2188',
+    make: 'CAT',
+    model: 'CAT 793F',
+    status: 'ok',
+    site: 'Pit 2',
+    hours: 18402,
+    serial: '4GZ01107',
+  },
+  'WT-0355': {
+    id: 'WT-0355',
+    label: 'WT-0355',
+    make: 'CAT',
+    model: 'CAT 777G',
+    status: 'ok',
+    site: 'Pit 2',
+    hours: 12640,
+    serial: 'TWR00942',
+  },
+} satisfies Record<string, Machine>;

@@ -1,20 +1,21 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { House, LifeBuoy, Truck, User, type LucideIcon } from 'lucide-react-native';
+import { BookOpen, House, LifeBuoy, Sparkles, Truck, type LucideIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { styles } from './styles';
-import { FabItem, TabItem } from './TabItems';
+import { TabItem } from './TabItems';
 
-const TABS: Record<string, { label: string; icon?: LucideIcon }> = {
+/** Order and labels from the FIELD mobile design. Profile is opened from the Home avatar. */
+const TABS: Record<string, { label: string; icon: LucideIcon }> = {
   index: { label: 'Home', icon: House },
   machines: { label: 'Machines', icon: Truck },
-  'ask-ai': { label: 'Ask AI' }, // the raised button
+  knowledge: { label: 'Knowledge', icon: BookOpen },
+  'ask-ai': { label: 'AI Assistant', icon: Sparkles },
   cases: { label: 'Cases', icon: LifeBuoy },
-  me: { label: 'Me', icon: User },
 };
 
-/** M2 bottom bar: rounded white sheet with a raised, floating Ask AI button in the middle. */
+/** Bottom bar: five tabs; the active icon sits in a soft pill that springs in. */
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   return (
@@ -32,7 +33,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
             });
             if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
           };
-          return tab.icon ? (
+          return (
             <TabItem
               key={route.key}
               label={tab.label}
@@ -40,8 +41,6 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
               focused={focused}
               onPress={onPress}
             />
-          ) : (
-            <FabItem key={route.key} label={tab.label} focused={focused} onPress={onPress} />
           );
         })}
       </View>

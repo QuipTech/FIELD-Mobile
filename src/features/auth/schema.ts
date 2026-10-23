@@ -29,6 +29,15 @@ const toE164 = (raw: string) => {
   return (trimmed.startsWith('+') ? '+' : '') + trimmed.replace(/\D/g, '');
 };
 
+const phone = z
+  .string()
+  .transform(toE164)
+  .pipe(
+    z.string().regex(/^\+[1-9]\d{7,14}$/, {
+      error: 'Include your country code, e.g. +61 400 123 456',
+    }),
+  );
+
 const required = (what: string) =>
   z
     .string()
@@ -39,18 +48,10 @@ export const registerSchema = z
   .object({
     firstName: required('first name'),
     lastName: required('last name'),
-    // TODO(confirm): the user pool has no company attribute yet (needs `custom:company`), so this
-    // is validated but not sent to Cognito.
+    // Sent to the API's POST /auth/sync, which creates the company (tenant) on first sign-in.
     company: required('company name'),
     email,
-    phone: z
-      .string()
-      .transform(toE164)
-      .pipe(
-        z.string().regex(/^\+[1-9]\d{7,14}$/, {
-          error: 'Include your country code, e.g. +61 400 123 456',
-        }),
-      ),
+    phone,
     password: newPassword,
     confirmPassword: z.string(),
     acceptTerms: z.boolean().refine((v) => v, { error: 'Accept the terms to continue' }),
@@ -75,3 +76,11 @@ export const newPasswordSchema = z
 export type NewPasswordValues = z.infer<typeof newPasswordSchema>;
 
 export const CODE_LENGTH = 6;
+
+/** First sign-in through Google/Apple (or an older account): what the API needs to set up. */
+export const completeProfileSchema = z.object({
+  company: required('company name'),
+  phone,
+});
+export type CompleteProfileInput = z.input<typeof completeProfileSchema>;
+export type CompleteProfileValues = z.output<typeof completeProfileSchema>;

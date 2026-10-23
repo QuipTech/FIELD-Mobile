@@ -1,20 +1,16 @@
 import {
-  Archivo_400Regular,
-  Archivo_500Medium,
-  Archivo_600SemiBold,
-  Archivo_700Bold,
-  Archivo_800ExtraBold,
+  IBMPlexSans_400Regular,
+  IBMPlexSans_500Medium,
+  IBMPlexSans_600SemiBold,
   useFonts,
-} from '@expo-google-fonts/archivo';
+} from '@expo-google-fonts/ibm-plex-sans';
 
-/** Loads every Archivo weight referenced by `fontFamily` in tokens.ts. */
+/** Loads the three IBM Plex Sans weights referenced by `fontFamily` in tokens.ts. */
 export function useAppFonts(): { loaded: boolean; error: Error | null } {
   const [loaded, error] = useFonts({
-    Archivo_400Regular,
-    Archivo_500Medium,
-    Archivo_600SemiBold,
-    Archivo_700Bold,
-    Archivo_800ExtraBold,
+    IBMPlexSans_400Regular,
+    IBMPlexSans_500Medium,
+    IBMPlexSans_600SemiBold,
   });
   return { loaded, error };
 }

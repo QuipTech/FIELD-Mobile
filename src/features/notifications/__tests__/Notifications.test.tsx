@@ -1,8 +1,10 @@
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useNotifications, useReadState } from '../data';
+import { SAMPLE_NOTIFICATIONS } from '@/test/fixtures/notifications';
+import { toNotification } from '../api';
+import { ADMIN_KINDS } from '../data';
 import { NotificationDetail, NotificationsList } from '../Notifications';
 
 const metrics = {
@@ -12,13 +14,12 @@ const metrics = {
 const renderScreen = (ui: ReactElement) =>
   render(<SafeAreaProvider initialMetrics={metrics}>{ui}</SafeAreaProvider>);
 
-beforeEach(() => useReadState.setState({ read: {} }));
+const techFeed = SAMPLE_NOTIFICATIONS.filter((n) => !ADMIN_KINDS.includes(n.kind));
 
 describe('NotificationsList', () => {
   it('marks unread items and opens them', async () => {
-    const { result } = await renderHook(() => useNotifications());
     const onOpen = jest.fn();
-    await renderScreen(<NotificationsList items={result.current} onOpen={onOpen} />);
+    await renderScreen(<NotificationsList items={techFeed} onOpen={onOpen} />);
 
     await fireEvent.press(screen.getByRole('button', { name: /^Unread\. HT-2201 flagged Down/ }));
     expect(onOpen).toHaveBeenCalledWith('n-2204');
@@ -31,24 +32,37 @@ describe('NotificationsList', () => {
   });
 });
 
-describe('read state', () => {
-  it('marks one or all notifications read', async () => {
-    const { result } = await renderHook(() => useNotifications());
-    expect(result.current.filter((n) => n.unread).map((n) => n.id)).toEqual(['n-2204', 'n-1038']);
+describe('API mapping', () => {
+  it('maps kinds, read state and the case or machine it links to', () => {
+    const n = toNotification({
+      id: 'n1',
+      kind: 'case_message',
+      title: 'Case #1042 was updated',
+      body: 'QuipTech support replied',
+      createdAt: '2026-10-22T03:15:00.000Z',
+      isRead: false,
+      data: { caseNumber: 1042 },
+    });
+    expect(n).toMatchObject({ kind: 'caseUpdate', unread: true, caseId: '1042' });
+    expect(n.summary).toBe('QuipTech support replied');
 
-    await act(() => useReadState.getState().markRead('n-2204'));
-    expect(result.current.filter((n) => n.unread).map((n) => n.id)).toEqual(['n-1038']);
-
-    await act(() => useReadState.getState().markAllRead(['n-1038']));
-    expect(result.current.some((n) => n.unread)).toBe(false);
+    const m = toNotification({
+      id: 'n2',
+      type: 'machine_status',
+      message: 'HT-2201 flagged Down',
+      createdAt: '2026-10-22T03:15:00.000Z',
+      readAt: '2026-10-22T04:00:00.000Z',
+      machineId: 'm-1',
+    });
+    expect(m).toMatchObject({ kind: 'machineDown', unread: false, machineId: 'm-1' });
+    expect(m.title).toBe('HT-2201 flagged Down');
   });
 });
 
 describe('NotificationDetail', () => {
   it('links to the case and the machine', async () => {
-    const { result } = await renderHook(() => useNotifications());
     const props = { onOpenCase: jest.fn(), onViewMachine: jest.fn() };
-    await renderScreen(<NotificationDetail item={result.current[0]!} {...props} />);
+    await renderScreen(<NotificationDetail item={techFeed[0]!} {...props} />);
 
     expect(screen.getByText(/did not clear on restart/)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Open case #1042' }));
@@ -61,13 +75,8 @@ describe('NotificationDetail', () => {
   });
 
   it('hides the actions when there is nothing to open', async () => {
-    const { result } = await renderHook(() => useNotifications());
     await renderScreen(
-      <NotificationDetail
-        item={result.current[3]!}
-        onOpenCase={jest.fn()}
-        onViewMachine={jest.fn()}
-      />,
+      <NotificationDetail item={techFeed[3]!} onOpenCase={jest.fn()} onViewMachine={jest.fn()} />,
     );
     expect(screen.queryByRole('button', { name: /Open case/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'View machine' })).toBeNull();

@@ -12,6 +12,7 @@ export const styles = StyleSheet.create({
   splitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { fontFamily: fontFamily.medium, fontSize: 16, lineHeight: 21, marginTop: 2 },
   footnote: { textAlign: 'center', marginTop: spacing.xs },
+  breaching: { color: colors.danger, fontFamily: fontFamily.medium },
 
   // Detail
   machineRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -62,4 +63,19 @@ export const styles = StyleSheet.create({
     paddingBottom: 13,
   },
   replyFocused: { borderColor: colors.brand },
+
+  // Internal note (admin only)
+  note: {
+    gap: spacing.xxs,
+    padding: spacing.sm,
+    marginVertical: spacing.xxs,
+    borderRadius: brandControl.radius,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.amber,
+    backgroundColor: colors.amberTint,
+  },
+  noteHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  noteLabel: { fontFamily: fontFamily.medium, color: colors.amber },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });
