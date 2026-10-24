@@ -1,6 +1,6 @@
 import { Check, ChevronDown, X, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
@@ -89,24 +89,26 @@ export function FilterSelect<T extends string>(props: FilterSelectProps<T>) {
           <Text style={styles.sheetTitle} accessibilityRole="header">
             {title}
           </Text>
-          {options.map((o) => {
-            const checked = o.value === value;
-            return (
-              <Pressable
-                key={o.value}
-                onPress={() => {
-                  onChange(o.value);
-                  setOpen(false);
-                }}
-                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-                accessibilityRole="radio"
-                accessibilityState={{ checked }}
-              >
-                <Text color={checked ? 'brand' : 'ink'}>{o.label}</Text>
-                {checked && <Check size={18} color={colors.brand} strokeWidth={2.5} />}
-              </Pressable>
-            );
-          })}
+          <ScrollView style={styles.sheetList} bounces={false}>
+            {options.map((o) => {
+              const checked = o.value === value;
+              return (
+                <Pressable
+                  key={o.value}
+                  onPress={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked }}
+                >
+                  <Text color={checked ? 'brand' : 'ink'}>{o.label}</Text>
+                  {checked && <Check size={18} color={colors.brand} strokeWidth={2.5} />}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
       </Modal>
     </>

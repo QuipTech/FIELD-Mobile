@@ -8,6 +8,11 @@ jest.mock('@/auth/session', () => {
   return { useSession: create(() => ({ status: 'signedIn' })) };
 });
 
+// Photo uploads go over XHR (see lib/http/xhr.ts); route them to the fetch stub so one log holds every request.
+jest.mock('@/lib/http/xhr', () => ({
+  xhrFetch: (url: string, init: RequestInit) => globalThis.fetch(url, init),
+}));
+
 type Call = { path: string; key: string | null; body: unknown };
 
 /** fetch stub: answers each request with the next status in `statuses` (then 201). */

@@ -15,7 +15,8 @@ import { useMemo } from 'react';
 
 import type { PillTone } from '@/components/Pill/Pill';
 import { pendingEntries, useOutbox } from '@/offline/outbox';
-import { useMachineComponents, useMachineHistory } from './api';
+import { useMachineHistory } from './api';
+import { useMachineComponents } from './componentsApi';
 import { useMachineManuals } from './manualsApi';
 import { useSnapshots } from './snapshots';
 
@@ -51,6 +52,26 @@ export type ComponentGroup = {
   count: number;
   /** Shown instead of the count, e.g. a fault code or worn part. */
   issue?: { label: string; tone: 'amber' | 'danger' };
+};
+
+/** One component in a system. Most fields are null until the API can record them. */
+export type MachineComponent = {
+  id: string;
+  systemId: string;
+  systemName: string;
+  name: string;
+  /** e.g. "Serviced 3 Oct". */
+  caption?: string;
+  issue?: ComponentGroup['issue'];
+  partNumber?: string;
+  serialNumber?: string;
+  manufacturer?: string;
+  installedAt?: string;
+  hoursAtInstall?: number;
+  hoursSinceInstall?: number;
+  lastServicedAt?: string;
+  nextServiceDueHours?: number;
+  notes?: string;
 };
 
 export type TimelineEntry = {

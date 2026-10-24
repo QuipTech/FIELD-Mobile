@@ -45,3 +45,6 @@ jest.mock('expo-speech', () => ({
   speak: jest.fn(),
   stop: jest.fn(async () => undefined),
 }));
+
+// Diagnostic logs (src/lib/log.ts) would flood test output.
+jest.mock('@/lib/log', () => ({ log: jest.fn() }));

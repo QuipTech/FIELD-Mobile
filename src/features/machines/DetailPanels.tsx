@@ -16,7 +16,7 @@ import { CaseCard } from '@/features/cases/CasesList';
 import type { SupportCase } from '@/features/cases/data';
 import { colors } from '@/theme';
 import { ManualRow, type ManualActions } from './Manuals';
-import type { ComponentGroup, MachineRecords } from './records';
+import type { ComponentGroup, MachineRecords, TimelineEntry } from './records';
 import { styles } from './styles';
 import { ConfigRows, HistoryRows } from './Timelines';
 
@@ -29,6 +29,8 @@ export type PanelProps = ManualActions & {
   onOpenComponent: (id: string) => void;
   onSeeAll: (section: FullSection) => void;
   onOpenCase: (id: string) => void;
+  /** M7 Capture photo for one history entry. */
+  onAddPhotos?: (entry: TimelineEntry) => void;
 };
 
 export function ComponentsPanel({
@@ -89,12 +91,12 @@ function Empty({ icon, title }: { icon: LucideIcon; title: string }) {
   return <EmptyPanel icon={icon} title={title} />;
 }
 
-export function HistoryPanel({ records, onSeeAll }: PanelProps) {
+export function HistoryPanel({ records, onSeeAll, onAddPhotos }: PanelProps) {
   const { history } = records;
   if (history.length === 0) return <Empty icon={History} title="No history logged yet" />;
   return (
     <View>
-      <HistoryRows entries={history.slice(0, PREVIEW)} />
+      <HistoryRows entries={history.slice(0, PREVIEW)} onAddPhotos={onAddPhotos} />
       <SeeAll label={`View full history (${history.length})`} onPress={() => onSeeAll('history')} />
     </View>
   );

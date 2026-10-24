@@ -26,6 +26,30 @@ describe('MachineTimeline', () => {
     expect(screen.queryByRole('button', { name: 'Export' })).toBeNull();
   });
 
+  it('offers "Add photos" on synced entries only', async () => {
+    const onAddPhotos = jest.fn();
+    const synced = {
+      id: 'e2',
+      type: 'repair' as const,
+      title: 'Pump replaced',
+      at: '2026-03-12',
+      by: 'Jo',
+    };
+    const queued = { ...synced, id: 'local-1', title: 'Seal checked', pending: true };
+    await renderScreen(
+      <MachineTimeline
+        entries={[queued, synced]}
+        filter="all"
+        onAddEntry={jest.fn()}
+        onOpenPhoto={jest.fn()}
+        onAddPhotos={onAddPhotos}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add photos to Seal checked' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos to Pump replaced' }));
+    expect(onAddPhotos).toHaveBeenCalledWith(synced);
+  });
+
   it('lets admins export', async () => {
     const onExport = jest.fn();
     await renderScreen(

@@ -2,12 +2,19 @@ import { useEffect, useState } from 'react';
 import { Alert, BackHandler } from 'react-native';
 
 import type { Machine } from '@/features/machines/data';
+import type { MachineComponent } from '@/features/machines/records';
 import { DetailsStep, NotesStep } from './FormSteps';
 import { PhotosStep } from './PhotosStep';
 import { emptyDraft, type CaptureDraft } from './store';
 
 export type CaptureFlowProps = {
   machines: Machine[];
+  /** The chosen machine's components, for "Component affected". */
+  components?: MachineComponent[];
+  /** Lets the route load components for the machine picked in step 1. */
+  onMachineChange?: (machineId: string) => void;
+  /** Shown under "Component affected" while there are no components to pick. */
+  componentsHint?: string;
   /** Prefill, e.g. the machine when started from its detail page. */
   initial?: Partial<CaptureDraft>;
   onSave: (draft: CaptureDraft & { machineId: string }) => void;
@@ -15,10 +22,25 @@ export type CaptureFlowProps = {
 };
 
 /** M6 Capture flow: details → photos → notes & hours, then save to the machine's history. */
-export function CaptureFlow({ machines, initial, onSave, onClose }: CaptureFlowProps) {
+export function CaptureFlow({
+  machines,
+  components = [],
+  componentsHint,
+  onMachineChange,
+  initial,
+  onSave,
+  onClose,
+}: CaptureFlowProps) {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState(() => emptyDraft(initial));
-  const update = (patch: Partial<CaptureDraft>) => setDraft((d) => ({ ...d, ...patch }));
+  const update = (patch: Partial<CaptureDraft>) => {
+    if (patch.machineId && patch.machineId !== draft.machineId) {
+      // A component belongs to one machine, so a new machine clears it.
+      patch = { componentId: undefined, componentReplaced: undefined, ...patch };
+      onMachineChange?.(patch.machineId!);
+    }
+    setDraft((d) => ({ ...d, ...patch }));
+  };
 
   const dirty = !!draft.title.trim() || draft.photos.length > 0 || !!draft.notes.trim();
   const close = () => {
@@ -42,7 +64,7 @@ export function CaptureFlow({ machines, initial, onSave, onClose }: CaptureFlowP
   const save = () => {
     if (draft.machineId) onSave({ ...draft, machineId: draft.machineId });
   };
-  const steps = { draft, update, machines, onClose: close };
+  const steps = { draft, update, machines, components, componentsHint, onClose: close };
 
   if (step === 2) {
     return (

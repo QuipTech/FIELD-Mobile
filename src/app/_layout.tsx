@@ -38,6 +38,7 @@ const DETAIL_SCREENS = {
   'knowledge/category/[id]': 'Category',
   'machine/[id]/compare': 'Compare snapshots',
   'machine/[id]/edit': 'Edit machine',
+  'machine/[id]/system/[systemId]': 'Components',
 };
 
 /** Camera screens cover the whole app and draw their own top bar. */
@@ -105,6 +106,7 @@ function RootStack() {
             ))}
             <Stack.Screen name="scan" options={CAMERA_SCREEN} />
             <Stack.Screen name="capture" options={CAMERA_SCREEN} />
+            <Stack.Screen name="capture-photo" options={CAMERA_SCREEN} />
             <Stack.Screen name="knowledge/search" options={FADE} />
           </Stack.Protected>
           <Stack.Protected guard={status === 'profileRequired'}>

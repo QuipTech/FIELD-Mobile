@@ -1,7 +1,9 @@
 import { getToken, notifySessionExpired, refreshToken } from './auth';
 import { ApiError, NetworkError, isRetryableStatus, toApiError } from './errors';
 import { DEFAULT_RETRY, backoffDelay, retryAfterMs, sleep, type RetryOptions } from './retry';
+import { log } from '../log';
 import { buildUrl, type Query } from './url';
+import { xhrFetch } from './xhr';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -37,10 +39,14 @@ async function fetchWithTimeout(
     timedOut = true;
     controller.abort();
   }, timeoutMs);
+  // File uploads go over XHR: `expo/fetch` (the global fetch) can't send `{ uri }` form parts.
+  const send = init.body instanceof FormData ? xhrFetch : fetch;
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await send(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (outer?.aborted) throw error;
+    // Kept in the log: below, every failure becomes a generic NetworkError (and is retried).
+    if (!timedOut) log('http', `fetch threw for ${init.method ?? 'GET'} ${url}: ${String(error)}`);
     throw new NetworkError(timedOut ? 'Request timed out' : 'Network request failed', timedOut);
   } finally {
     clearTimeout(timer);
@@ -77,6 +83,7 @@ export function createHttpClient(config: HttpClientConfig) {
     const useAuth = opts.auth !== false;
     const timeout = opts.timeoutMs ?? timeoutDefault;
     const token = useAuth ? await getToken() : null;
+    if (useAuth && !token) log('http', `no auth token for ${opts.method ?? 'GET'} ${url}`);
     const res = await fetchWithTimeout(url, buildInit(opts, token), timeout, opts.signal);
     if (res.status !== 401 || !useAuth) return res;
 
@@ -100,13 +107,22 @@ export function createHttpClient(config: HttpClientConfig) {
 
     for (let attempt = 1; ; attempt++) {
       const isLast = attempt >= attempts;
+      const started = Date.now();
       try {
         const res = await send(url, opts);
+        // Writes are always logged; reads only when they fail (to keep the log readable).
+        if (method !== 'GET' || !res.ok) {
+          const ms = Date.now() - started;
+          log('http', `${method} ${path} → ${res.status} (${ms} ms, attempt ${attempt})`);
+        }
         if (res.ok) return await parseBody<T>(res);
         if (isLast || !isRetryableStatus(res.status)) throw await toApiError(res);
         const wait = retryAfterMs(res.headers.get('retry-after'), retry.maxDelayMs);
         await sleep(wait ?? backoffDelay(attempt, retry), opts.signal);
       } catch (error) {
+        if (error instanceof NetworkError) {
+          log('http', `${method} ${path} → ${error.message} (attempt ${attempt})`);
+        }
         if (error instanceof ApiError || isLast || !(error instanceof NetworkError)) throw error;
         await sleep(backoffDelay(attempt, retry), opts.signal);
       }

@@ -37,9 +37,12 @@ export const HISTORY_FILTERS: FilterOption<HistoryFilter>[] = [
 export function HistoryRows({
   entries,
   onOpenPhoto,
+  onAddPhotos,
 }: {
   entries: TimelineEntry[];
   onOpenPhoto?: (entry: TimelineEntry, index: number) => void;
+  /** Synced entries only: one still queued on this device has no server id to attach to. */
+  onAddPhotos?: (entry: TimelineEntry) => void;
 }) {
   return (
     <View>
@@ -54,6 +57,7 @@ export function HistoryRows({
           photoUris={e.photoUris}
           divider={i > 0}
           onOpenPhoto={onOpenPhoto && ((index) => onOpenPhoto(e, index))}
+          onAddPhotos={onAddPhotos && !e.pending ? () => onAddPhotos(e) : undefined}
         />
       ))}
     </View>
@@ -83,6 +87,7 @@ export type MachineTimelineProps = {
   filter: HistoryFilter;
   onAddEntry: () => void;
   onOpenPhoto: (entry: TimelineEntry, index: number) => void;
+  onAddPhotos?: (entry: TimelineEntry) => void;
   /** Admin only: export this machine's history. */
   onExport?: () => void;
 };
@@ -93,6 +98,7 @@ export function MachineTimeline({
   filter,
   onAddEntry,
   onOpenPhoto,
+  onAddPhotos,
   onExport,
 }: MachineTimelineProps) {
   const visible = filter === 'all' ? entries : entries.filter((e) => e.type === filter);
@@ -127,7 +133,7 @@ export function MachineTimeline({
           message="Repairs, inspections, faults and services logged on this machine appear here."
         />
       ) : (
-        <HistoryRows entries={visible} onOpenPhoto={onOpenPhoto} />
+        <HistoryRows entries={visible} onOpenPhoto={onOpenPhoto} onAddPhotos={onAddPhotos} />
       )}
     </DetailScreen>
   );

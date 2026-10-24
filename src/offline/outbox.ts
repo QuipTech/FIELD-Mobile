@@ -30,7 +30,14 @@ export type OutboxItem = {
       /** What the timeline shows until the entry syncs. */
       preview: TimelineEntry;
     }
-  | { kind: 'entryPhoto'; machineId: string; entryId: string; photo: OutboxPhoto }
+  | {
+      kind: 'entryPhoto';
+      machineId: string;
+      entryId: string;
+      photo: OutboxPhoto;
+      /** Note typed in Capture photo (M7); sent with the first photo of the batch. */
+      caption?: string;
+    }
   | { kind: 'caseMessage'; caseId: string; staff: boolean; body: Record<string, unknown> }
 );
 

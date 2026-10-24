@@ -12,6 +12,12 @@ export type CaptureDraft = {
   notes: string;
   /** Hour meter reading as typed. */
   hours: string;
+  /** Downtime in hours as typed, e.g. "3.5". */
+  downtime: string;
+  /** The component the entry is about, if any. */
+  componentId?: string;
+  /** Repairs only: the component was swapped (the API snapshots the configuration). */
+  componentReplaced?: boolean;
 };
 
 export const emptyDraft = (initial: Partial<CaptureDraft> = {}): CaptureDraft => ({
@@ -20,6 +26,7 @@ export const emptyDraft = (initial: Partial<CaptureDraft> = {}): CaptureDraft =>
   photos: [],
   notes: '',
   hours: '',
+  downtime: '',
   ...initial,
 });
 
@@ -29,9 +36,11 @@ export function toEntry(
   now = new Date(),
 ): LoggedEntry {
   const hours = Number(draft.hours.replace(/[^\d.]/g, ''));
+  const downtime = Number(draft.downtime.replace(/[^\d.]/g, ''));
   const detail = [
     draft.notes.trim(),
     draft.hours.trim() && Number.isFinite(hours) ? `Hour meter ${formatHours(hours)}` : '',
+    draft.downtime.trim() && Number.isFinite(downtime) ? `${downtime} h downtime` : '',
   ]
     .filter(Boolean)
     .join(' · ');

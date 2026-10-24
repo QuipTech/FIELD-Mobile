@@ -29,7 +29,10 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingTop: spacing.md,
     paddingHorizontal: spacing.xs,
+    // Long lists (e.g. a machine's components) scroll inside the sheet instead of overflowing.
+    maxHeight: '80%',
   },
+  sheetList: { flexShrink: 1 },
   sheetTitle: {
     fontFamily: fontFamily.medium,
     fontSize: 16,

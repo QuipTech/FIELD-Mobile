@@ -34,7 +34,6 @@ const setup = async (overrides: Partial<HomeProps> = {}) => {
     onAskAi: jest.fn(),
     onScan: jest.fn(),
     onLogEntry: jest.fn(),
-    onCapture: jest.fn(),
     ...overrides,
   };
   await render(
@@ -46,6 +45,17 @@ const setup = async (overrides: Partial<HomeProps> = {}) => {
 };
 
 describe('Home', () => {
+  it('offers the three H1 quick actions and no separate Capture tile', async () => {
+    const props = await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan machine' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Log entry' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Ask AI' }));
+    expect(props.onScan).toHaveBeenCalledTimes(1);
+    expect(props.onLogEntry).toHaveBeenCalledTimes(1);
+    expect(props.onAskAi).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Capture' })).toBeNull();
+  });
+
   it('shows a customer their machines and open cases, no admin tiles', async () => {
     const onOpenCase = jest.fn();
     const openCase = SAMPLE_CASES.find((c) => c.status === 'open')!;

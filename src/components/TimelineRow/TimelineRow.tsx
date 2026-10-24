@@ -1,4 +1,4 @@
-import { Image as ImageIcon } from 'lucide-react-native';
+import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { brandControl, colors, fontFamily, spacing } from '@/theme';
@@ -19,6 +19,8 @@ export type TimelineRowProps = {
   divider?: boolean;
   onPress?: () => void;
   onOpenPhoto?: (index: number) => void;
+  /** Shows an "Add photos" action under the row (M7 Capture photo). */
+  onAddPhotos?: () => void;
 };
 
 /** One dated entry in a history / configuration timeline (M5, M5.5, M16). */
@@ -86,6 +88,20 @@ export function TimelineRow({
           ))}
         </View>
       )}
+      {props.onAddPhotos && (
+        <Pressable
+          onPress={props.onAddPhotos}
+          hitSlop={8}
+          style={({ pressed }) => [styles.addPhotos, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Add photos to ${title}`}
+        >
+          <Camera size={16} color={colors.brand} strokeWidth={2} />
+          <Text variant="caption" color="brand" style={styles.addPhotosLabel}>
+            Add photos
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -116,4 +132,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photoImage: { width: '100%', height: '100%' },
+  addPhotos: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  addPhotosLabel: { fontFamily: fontFamily.medium },
 });

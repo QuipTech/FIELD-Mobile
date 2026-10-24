@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { http } from '@/lib/http';
 import type { Machine, MachineStatus } from './data';
-import type { ComponentGroup, EntryType, TimelineEntry } from './records';
+import type { EntryType, TimelineEntry } from './records';
 
 /**
  * FIELD API machines endpoints (staging, verified 2026-10-20). Responses are parsed and turned
@@ -95,15 +95,35 @@ const apiHistoryEntry = z.object({
   operatingHours: z.number().nullish(),
   downtimeHours: z.number().nullish(),
   photos: z.array(z.unknown()).default([]),
+  /** The component the entry is about; only its names are shown. */
+  component: z
+    .object({ name: z.string().nullish(), systemName: z.string().nullish() })
+    .nullish()
+    .catch(null),
 });
+
+// The API sends `signedUrl`, valid for 15 min; history goes stale after a minute, so revisits refetch.
+const PHOTO_URL_KEYS = ['signedUrl', 'thumbnailUrl', 'url', 'photoUrl', 'fileUrl'] as const;
+
+/** A history photo's image URL: a bare string, or the first URL field the API sends. */
+function photoUrlOf(photo: unknown): string | undefined {
+  if (typeof photo === 'string') return photo;
+  if (!photo || typeof photo !== 'object') return undefined;
+  const p = photo as Record<string, unknown>;
+  const url = PHOTO_URL_KEYS.map((k) => p[k]).find((v) => typeof v === 'string' && v);
+  return url as string | undefined;
+}
 
 const ENTRY_TYPES: EntryType[] = ['repair', 'inspection', 'fault', 'service', 'note'];
 
 export function toTimelineEntry(e: z.infer<typeof apiHistoryEntry>): TimelineEntry {
+  const component = [e.component?.systemName, e.component?.name].filter(Boolean).join(' › ');
   const facts = [
+    component || undefined,
     e.operatingHours != null ? `${e.operatingHours.toLocaleString('en-AU')} h` : undefined,
     e.downtimeHours ? `${e.downtimeHours} h downtime` : undefined,
   ].filter(Boolean);
+  const urls = e.photos.map(photoUrlOf).filter(Boolean);
   return {
     id: e.id,
     type: ENTRY_TYPES.includes(e.entryType as EntryType) ? (e.entryType as EntryType) : 'note',
@@ -112,6 +132,7 @@ export function toTimelineEntry(e: z.infer<typeof apiHistoryEntry>): TimelineEnt
     at: e.createdAt,
     by: e.author?.name ?? 'System',
     photos: e.photos.length || undefined,
+    photoUris: urls.length ? e.photos.map((p) => photoUrlOf(p) ?? '') : undefined,
   };
 }
 
@@ -124,37 +145,5 @@ export function useMachineHistory(id: string | undefined) {
         .array(apiHistoryEntry)
         .parse(await http.get(`/machines/${encodeURIComponent(id!)}/history`))
         .map(toTimelineEntry),
-  });
-}
-
-const apiComponent = z.object({
-  id: z.string(),
-  systemId: z.string(),
-  systemName: z.string(),
-  condition: z.string().nullish(),
-});
-
-/** Components grouped by system, with the first flagged condition shown on the group. */
-export function toComponentGroups(items: z.infer<typeof apiComponent>[]): ComponentGroup[] {
-  const groups = new Map<string, ComponentGroup>();
-  for (const c of items) {
-    const group = groups.get(c.systemId) ?? { id: c.systemId, name: c.systemName, count: 0 };
-    group.count += 1;
-    if (c.condition && !group.issue) group.issue = { label: c.condition, tone: 'amber' };
-    groups.set(c.systemId, group);
-  }
-  return [...groups.values()];
-}
-
-export function useMachineComponents(id: string | undefined) {
-  return useQuery({
-    queryKey: machineKeys.components(id ?? ''),
-    enabled: !!id,
-    queryFn: async () =>
-      toComponentGroups(
-        z
-          .array(apiComponent)
-          .parse(await http.get(`/machines/${encodeURIComponent(id!)}/components`)),
-      ),
   });
 }

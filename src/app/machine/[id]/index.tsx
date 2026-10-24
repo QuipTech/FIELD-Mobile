@@ -3,7 +3,7 @@ import { Pencil } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { useRole } from '@/auth/useRole';
-import { IconButton, Pill, toast } from '@/components';
+import { IconButton, Pill } from '@/components';
 import { useCases } from '@/features/cases/api';
 import { MACHINE_STATUS } from '@/features/machines/data';
 import { MachineDetail } from '@/features/machines/MachineDetail';
@@ -65,7 +65,18 @@ export default function MachineRoute() {
               onLogEntry={() =>
                 router.push({ pathname: '/capture', params: { machineId: machine.id } })
               }
-              onOpenComponent={() => toast.show('Component details are coming soon.')}
+              onAddPhotos={(entry) =>
+                router.push({
+                  pathname: '/capture-photo',
+                  params: { machineId: machine.id, entryId: entry.id },
+                })
+              }
+              onOpenComponent={(systemId) =>
+                router.push({
+                  pathname: '/machine/[id]/system/[systemId]',
+                  params: { id: machine.id, systemId },
+                })
+              }
               onSeeAll={(section) =>
                 router.push({ pathname: SECTIONS[section], params: { id: machine.id } })
               }

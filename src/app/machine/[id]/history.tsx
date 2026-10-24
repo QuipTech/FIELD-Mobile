@@ -45,6 +45,12 @@ export default function MachineHistoryRoute() {
               router.push({ pathname: '/capture', params: { machineId: machine.id } })
             }
             onOpenPhoto={() => toast.show('The photo viewer is coming soon.')}
+            onAddPhotos={(entry) =>
+              router.push({
+                pathname: '/capture-photo',
+                params: { machineId: machine.id, entryId: entry.id },
+              })
+            }
             // TODO(api): no history export endpoint yet.
             onExport={isAdmin ? () => toast.show('Export is coming soon.') : undefined}
           />

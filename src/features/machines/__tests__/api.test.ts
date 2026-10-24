@@ -1,6 +1,7 @@
 import { toHomeData } from '@/features/home/data';
 import { API_COMPONENTS, API_DASHBOARD, API_HISTORY, API_MACHINES } from '@/test/fakeApi';
-import { toComponentGroups, toMachine, toTimelineEntry } from '../api';
+import { toMachine, toTimelineEntry } from '../api';
+import { toComponent, toComponentGroups } from '../componentsApi';
 import { machineIdFromCode } from '../data';
 
 describe('machine mapping', () => {
@@ -46,10 +47,32 @@ describe('machine mapping', () => {
   });
 
   it('groups components by system and flags a condition', () => {
-    expect(toComponentGroups(API_COMPONENTS)).toEqual([
-      { id: 'pt', name: 'Powertrain', count: 2, issue: { label: 'worn', tone: 'amber' } },
+    expect(toComponentGroups(API_COMPONENTS.map(toComponent))).toEqual([
+      { id: 'pt', name: 'Powertrain', count: 2, issue: { label: 'Worn', tone: 'amber' } },
       { id: 'hy', name: 'Hydraulics', count: 1 },
     ]);
+  });
+
+  it('maps condition codes, notes and severity to a component flag', () => {
+    const base = { id: 'c', systemId: 's', systemName: 'S', name: 'Pump' };
+    expect(toComponent({ ...base, condition: 'ok' }).issue).toBeUndefined();
+    expect(toComponent({ ...base, condition: 'fault' }).issue).toEqual({
+      label: 'Fault',
+      tone: 'danger',
+    });
+    expect(
+      toComponent({
+        ...base,
+        condition: 'worn',
+        conditionNote: 'Seal leak',
+        conditionSeverity: 'critical',
+      }).issue,
+    ).toEqual({ label: 'Seal leak', tone: 'danger' });
+  });
+
+  it('reads signed photo URLs from history', () => {
+    const entry = { ...API_HISTORY[1]!, photos: [{ id: 'p1', signedUrl: 'https://s/p1.jpg' }] };
+    expect(toTimelineEntry(entry).photoUris).toEqual(['https://s/p1.jpg']);
   });
 });
 

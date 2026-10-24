@@ -9,7 +9,7 @@ import { useMachineRecords } from '@/features/machines/records';
 import { API_HISTORY, installFakeApi } from '@/test/fakeApi';
 import { CaptureFlow } from '../CaptureFlow';
 import { useOutbox } from '@/offline/outbox';
-import { queueEntry } from '../queue';
+import { entryBody, queueEntry } from '../queue';
 import { emptyDraft, toEntry } from '../store';
 
 jest.mock('@/features/camera/nativeCamera', () => ({ expoCamera: null }));
@@ -55,6 +55,49 @@ describe('CaptureFlow', () => {
         hours: '9,800',
         notes: 'All good.',
       }),
+    );
+  });
+
+  it('tags the entry with the component affected', async () => {
+    const onSave = jest.fn();
+    const pump = {
+      id: 'c-pump',
+      systemId: 'hy',
+      systemName: 'Hydraulics',
+      name: 'Main pump',
+    };
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <CaptureFlow
+          machines={FLEET}
+          components={[pump]}
+          initial={{ machineId: 'LD-0904', title: 'Pump seal' }}
+          onSave={onSave}
+          onClose={jest.fn()}
+        />
+      </SafeAreaProvider>,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Component affected: None' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Hydraulics › Main pump' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Component replaced' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Next — photos' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Skip photos' }));
+    expect(screen.getByText(/Hydraulics › Main pump/)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Hour meter reading'), '14,230.4');
+    await fireEvent.changeText(screen.getByLabelText('Downtime in hours'), '3.5');
+    await fireEvent.press(screen.getByRole('button', { name: 'Save entry' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ componentId: 'c-pump' }));
+    expect(entryBody(onSave.mock.calls[0][0])).toMatchObject({
+      entryType: 'repair',
+      componentId: 'c-pump',
+      componentReplaced: true,
+      operatingHours: 14230,
+      downtimeHours: 3.5,
+    });
+    // Only a repair records a replacement.
+    expect(entryBody({ ...onSave.mock.calls[0][0], type: 'service' })).not.toHaveProperty(
+      'componentReplaced',
     );
   });
 });

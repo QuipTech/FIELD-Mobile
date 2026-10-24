@@ -36,7 +36,7 @@ export class NetworkError extends Error {
   }
 }
 
-type NestErrorBody = { message?: unknown; error?: unknown; statusCode?: unknown };
+type NestErrorBody = { message?: unknown; error?: unknown; statusCode?: unknown; code?: unknown };
 
 /** Parses the NestJS error shape `{ statusCode, message, error }` (message may be string[]). */
 export async function toApiError(res: Response): Promise<ApiError> {
@@ -52,7 +52,13 @@ export async function toApiError(res: Response): Promise<ApiError> {
     : typeof raw === 'string'
       ? raw
       : res.statusText || `Request failed (${res.status})`;
-  const code = typeof body?.error === 'string' ? body.error : undefined;
+  // A specific `code` (e.g. "machine_inactive") wins over the generic `error` ("Forbidden").
+  const code =
+    typeof body?.code === 'string'
+      ? body.code
+      : typeof body?.error === 'string'
+        ? body.error
+        : undefined;
   return new ApiError(res.status, message, code, body);
 }
 
@@ -66,6 +72,9 @@ export function errorMessage(error: unknown): string {
     return error.isTimeout ? 'The server took too long to respond.' : 'No connection.';
   }
   if (error instanceof ApiError) {
+    if (error.code === 'machine_inactive') {
+      return "This machine isn't active. An admin can activate it on the website.";
+    }
     if (error.isForbidden) return "You don't have permission to do that.";
     if (error.status >= 500) return 'Something went wrong on our side. Try again.';
     return error.message;

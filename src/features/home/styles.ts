@@ -92,16 +92,8 @@ export const styles = StyleSheet.create({
     gap: spacing.xs,
     ...cardShadow,
   },
-  tilePrimary: { backgroundColor: colors.brand, borderColor: colors.brand },
-  tileCompact: {
-    height: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
   tilePressed: { opacity: 0.85 },
-  tileLabel: { fontFamily: fontFamily.medium, fontSize: 15, lineHeight: 20 },
+  tileLabel: { fontFamily: fontFamily.medium, fontSize: 15, lineHeight: 20, color: colors.ink },
 
   // Cards
   card: {

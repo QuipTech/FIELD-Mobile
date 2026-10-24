@@ -1,4 +1,4 @@
-import { Camera, Plus, ScanLine, Search, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { Plus, ScanLine, Search, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/Text/Text';
@@ -10,10 +10,9 @@ export type QuickActionsProps = {
   onAskAi: () => void;
   onScan: () => void;
   onLogEntry: () => void;
-  onCapture: () => void;
 };
 
-/** Search field plus the four M2 action tiles. */
+/** Search field plus the three H1 action tiles. */
 export function QuickActions(props: QuickActionsProps) {
   return (
     <>
@@ -27,12 +26,9 @@ export function QuickActions(props: QuickActionsProps) {
         <Text color="inkSubtle">Search machines or manuals</Text>
       </Pressable>
       <View style={styles.row}>
-        <Tile icon={Sparkles} label="Ask AI" onPress={props.onAskAi} primary />
-        <Tile icon={ScanLine} label="Scan asset" onPress={props.onScan} />
-      </View>
-      <View style={styles.row}>
-        <Tile icon={Plus} label="Log entry" onPress={props.onLogEntry} compact />
-        <Tile icon={Camera} label="Capture" onPress={props.onCapture} compact />
+        <Tile icon={ScanLine} label="Scan machine" onPress={props.onScan} />
+        <Tile icon={Plus} label="Log entry" onPress={props.onLogEntry} />
+        <Tile icon={Sparkles} label="Ask AI" onPress={props.onAskAi} />
       </View>
     </>
   );
@@ -42,31 +38,20 @@ function Tile({
   icon: Icon,
   label,
   onPress,
-  primary,
-  compact,
 }: {
   icon: LucideIcon;
   label: string;
   onPress: () => void;
-  primary?: boolean;
-  compact?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.tile,
-        primary && styles.tilePrimary,
-        compact && styles.tileCompact,
-        pressed && styles.tilePressed,
-      ]}
+      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
     >
-      <Icon size={22} color={primary ? colors.onAccent : colors.inkMuted} strokeWidth={2} />
-      <Text style={[styles.tileLabel, { color: primary ? colors.onAccent : colors.ink }]}>
-        {label}
-      </Text>
+      <Icon size={22} color={colors.inkMuted} strokeWidth={2} />
+      <Text style={styles.tileLabel}>{label}</Text>
     </Pressable>
   );
 }

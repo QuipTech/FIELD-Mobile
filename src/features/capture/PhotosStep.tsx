@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { ArrowRight, Image as ImageIcon, X } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,11 +17,22 @@ export type PhotosStepProps = {
   photos: string[];
   onChange: (photos: string[]) => void;
   onClose: () => void;
-  onNext: () => void;
-};
+  /** Header text; defaults to the Log entry step. */
+  title?: string;
+} & (
+  | { onNext: () => void; sheet?: undefined }
+  /** Bottom sheet content in place of "Skip photos" / "Next" (M7 Capture photo). */
+  | { sheet: ReactNode; onNext?: undefined }
+);
 
-/** M6 Capture flow, camera step: shoot up to six photos, then add notes and hours. */
-export function PhotosStep({ photos, onChange, onClose, onNext }: PhotosStepProps) {
+/** Camera with a photo tray: M6 Log entry step 2, and the body of M7 Capture photo. */
+export function PhotosStep({
+  photos,
+  onChange,
+  onClose,
+  title = 'Step 2 of 3 · Photos',
+  ...rest
+}: PhotosStepProps) {
   const insets = useSafeAreaInsets();
   const camera = useRef<CameraHandle>(null);
   const [ready, setReady] = useState(false);
@@ -64,7 +75,7 @@ export function PhotosStep({ photos, onChange, onClose, onNext }: PhotosStepProp
           <X size={24} color={colors.onAccent} strokeWidth={2} />
         </Pressable>
         <Text color="onAccent" style={styles.topTitle} accessibilityRole="header">
-          Step 2 of 3 · Photos
+          {title}
         </Text>
       </View>
 
@@ -89,17 +100,24 @@ export function PhotosStep({ photos, onChange, onClose, onNext }: PhotosStepProp
       />
 
       <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-        {photos.length === 0 && (
-          <BrandButton variant="outline" label="Skip photos" onPress={onNext} />
-        )}
-        <BrandButton
-          label="Next — notes & hours"
-          icon={<ArrowRight size={18} color={colors.onAccent} strokeWidth={2} />}
-          onPress={onNext}
-          disabled={photos.length === 0}
-        />
+        {rest.onNext ? <NextButtons count={photos.length} onNext={rest.onNext} /> : rest.sheet}
       </View>
     </View>
+  );
+}
+
+/** Log entry step 2: skip (before any shot) or go on to notes & hours. */
+function NextButtons({ count, onNext }: { count: number; onNext: () => void }) {
+  return (
+    <>
+      {count === 0 && <BrandButton variant="outline" label="Skip photos" onPress={onNext} />}
+      <BrandButton
+        label="Next — notes & hours"
+        icon={<ArrowRight size={18} color={colors.onAccent} strokeWidth={2} />}
+        onPress={onNext}
+        disabled={count === 0}
+      />
+    </>
   );
 }
 

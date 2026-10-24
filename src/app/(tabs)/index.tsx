@@ -49,7 +49,6 @@ export default function HomeRoute() {
         onAskAi={() => router.navigate('/ask-ai')}
         onScan={() => router.push('/scan')}
         onLogEntry={() => router.push('/capture')}
-        onCapture={() => router.push('/capture')}
         onNotifications={() => router.push('/notifications')}
         unreadNotifications={unread.data}
         onProfile={() => router.navigate('/me')}

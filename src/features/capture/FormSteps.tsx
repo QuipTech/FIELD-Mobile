@@ -8,9 +8,10 @@ import { FilterChip } from '@/components/FilterChip/FilterChip';
 import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
 import type { Machine } from '@/features/machines/data';
-import { ENTRY_TYPE, type EntryType } from '@/features/machines/records';
+import { ENTRY_TYPE, type EntryType, type MachineComponent } from '@/features/machines/records';
 import { formatHours } from '@/lib/format';
 import { colors, layout } from '@/theme';
+import { ComponentPicker, componentLabel } from './ComponentPicker';
 import { StepShell } from './StepShell';
 import type { CaptureDraft } from './store';
 import { styles } from './styles';
@@ -19,6 +20,8 @@ type StepProps = {
   draft: CaptureDraft;
   update: (patch: Partial<CaptureDraft>) => void;
   machines: Machine[];
+  components: MachineComponent[];
+  componentsHint?: string;
   onClose: () => void;
 };
 
@@ -41,6 +44,8 @@ export function DetailsStep({
   draft,
   update,
   machines,
+  components,
+  componentsHint,
   onClose,
   onNext,
 }: StepProps & { onNext: () => void }) {
@@ -81,6 +86,12 @@ export function DetailsStep({
           />
         ))}
       </View>
+      <ComponentPicker
+        draft={draft}
+        update={update}
+        components={components}
+        componentsHint={componentsHint}
+      />
       <Text style={styles.label}>What was done</Text>
       <Field
         value={draft.title}
@@ -99,11 +110,13 @@ export function NotesStep({
   draft,
   update,
   machines,
+  components,
   onClose,
   onBack,
   onSave,
 }: StepProps & { onBack: () => void; onSave: () => void }) {
   const machine = machines.find((m) => m.id === draft.machineId);
+  const component = components.find((c) => c.id === draft.componentId);
   const type = ENTRY_TYPE[draft.type];
   const photos = draft.photos.length;
   return (
@@ -123,7 +136,9 @@ export function NotesStep({
         <Text style={styles.summaryTitle}>{draft.title}</Text>
         {machine && (
           <Text variant="caption" color="inkMuted">
-            {machine.label} · {machine.model}
+            {[machine.label, machine.model, component && componentLabel(component)]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
         )}
       </BrandCard>
@@ -136,6 +151,14 @@ export function NotesStep({
         }
         keyboardType="numeric"
         accessibilityLabel="Hour meter reading"
+      />
+      <Text style={styles.label}>Downtime</Text>
+      <Field
+        value={draft.downtime}
+        onChangeText={(downtime) => update({ downtime })}
+        placeholder="Hours, e.g. 3.5"
+        keyboardType="decimal-pad"
+        accessibilityLabel="Downtime in hours"
       />
       <Text style={styles.label}>Notes</Text>
       <Field
