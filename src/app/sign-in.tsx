@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
+import { getApiSession } from '@/auth/apiSession';
 import {
   disableBiometricSignIn,
   enableBiometricSignIn,
@@ -36,19 +37,24 @@ function biometricBlocker(support: BiometricSupport | null, savedEmail: string |
       : 'Add a fingerprint in your phone’s Settings (Security) first.';
   }
   if (!savedEmail) {
-    return `Sign in with your password, then turn on ${support.label} in Me → Security.`;
+    return `Sign in, then turn on ${support.label} in Me → Security.`;
   }
   return null;
 }
 
-/** Google / Apple: success is picked up by the session gate in _layout; cancel is silent. */
+/**
+ * Google / Apple: success is picked up by the session gate in _layout; cancel is silent. These
+ * accounts have no password, so biometric sign-in needs the API's device keys.
+ */
 const social = (provider: SocialProvider) => () =>
   runAuth(async () => {
-    await signInWithProvider(provider);
+    if (!(await signInWithProvider(provider))) return;
+    const email = (await getApiSession())?.user.email; // none yet on a first sign-in
+    if (email) await offerBiometricSignIn(email);
   });
 
-/** After a password sign-in, offers Face ID / fingerprint for next time (or swaps accounts). */
-async function offerBiometricSignIn(email: string, password: string) {
+/** After signing in, offers Face ID / fingerprint for next time (or swaps accounts). */
+async function offerBiometricSignIn(email: string, password?: string) {
   const { support, email: saved } = useBiometrics.getState();
   if (!support || saved?.toLowerCase() === email.toLowerCase()) return;
   if (saved) await disableBiometricSignIn(); // it belonged to another account
@@ -61,7 +67,12 @@ async function offerBiometricSignIn(email: string, password: string) {
         text: 'Turn on',
         onPress: () =>
           enableBiometricSignIn(email, password)
-            .then((on) => on && toast.success(`${support.label} sign-in is on.`))
+            .then((outcome) => {
+              if (outcome === 'on') toast.success(`${support.label} sign-in is on.`);
+              if (outcome === 'needsPassword') {
+                toast.show(`${support.label} sign-in isn’t available for this account yet.`);
+              }
+            })
             .catch(() => toast.error(`Couldn’t turn on ${support.label}. Try again in Settings.`)),
       },
     ],

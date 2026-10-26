@@ -22,10 +22,18 @@ function KindIcon({ kind }: { kind: AppNotification['kind'] }) {
 export type NotificationsListProps = {
   items: AppNotification[];
   onOpen: (id: string) => void;
+  /** Set while older notifications remain on the server. */
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 };
 
 /** M12 Notifications: newest first, unread marked with a violet dot. */
-export function NotificationsList({ items, onOpen }: NotificationsListProps) {
+export function NotificationsList({
+  items,
+  onOpen,
+  onLoadMore,
+  loadingMore,
+}: NotificationsListProps) {
   if (items.length === 0) {
     return (
       <DetailScreen>
@@ -66,6 +74,15 @@ export function NotificationsList({ items, onOpen }: NotificationsListProps) {
           );
         })}
       </View>
+      {onLoadMore && (
+        <BrandButton
+          variant="outline"
+          label="Show older"
+          onPress={onLoadMore}
+          loading={loadingMore}
+          style={styles.loadMore}
+        />
+      )}
     </DetailScreen>
   );
 }

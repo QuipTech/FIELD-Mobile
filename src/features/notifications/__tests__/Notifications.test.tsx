@@ -57,6 +57,19 @@ describe('API mapping', () => {
     expect(m).toMatchObject({ kind: 'machineDown', unread: false, machineId: 'm-1' });
     expect(m.title).toBe('HT-2201 flagged Down');
   });
+
+  it("finds the case or machine in the live API's link", () => {
+    const base = { title: 'T', body: 'B', createdAt: '2026-10-26T08:55:10.000Z', isRead: false };
+    expect(
+      toNotification({ ...base, id: 'a', kind: 'case_assigned', link: '/cases/1042' }),
+    ).toMatchObject({
+      caseId: '1042',
+      link: '/cases/1042',
+    });
+    expect(
+      toNotification({ ...base, id: 'b', kind: 'machine_status', link: '/machines/m-9' }),
+    ).toMatchObject({ machineId: 'm-9' });
+  });
 });
 
 describe('NotificationDetail', () => {

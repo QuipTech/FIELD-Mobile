@@ -9,6 +9,8 @@ import { startBiometricSync } from '@/auth/biometrics';
 import { signOutUser } from '@/auth/flows';
 import { runAuth } from '@/auth/runAuth';
 import { hydrateSession, listenForAuthEvents, useSession } from '@/auth/session';
+import { startPushSync } from '@/features/notifications/push';
+import { configureForegroundPush, usePushResponses } from '@/features/notifications/pushResponses';
 import { hydrateOnboarding, useOnboarding } from '@/features/onboarding/onboardingStorage';
 import { BrandSplash } from '@/features/splash/BrandSplash';
 import { startOutboxSync } from '@/offline/sync';
@@ -52,6 +54,7 @@ const FADE = { headerShown: false, animation: 'fade' } as const;
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 configureAmplify();
+configureForegroundPush();
 
 export default function RootLayout() {
   return (
@@ -73,6 +76,8 @@ function RootStack() {
   // screen is right.
   const ready =
     (loaded || !!error) && themeLoaded && onboardingSeen !== null && status !== 'unknown';
+  // A tapped push opens its screen once the signed-in app is showing.
+  usePushResponses(ready && status === 'signedIn');
 
   useEffect(() => {
     // API requests carry the API session's token; if it can't be renewed, sign out.
@@ -83,11 +88,13 @@ function RootStack() {
     const stopAccess = startAccessSync();
     const stopBiometrics = startBiometricSync();
     const stopOutbox = startOutboxSync();
+    const stopPush = startPushSync();
     const stopAuth = listenForAuthEvents();
     return () => {
       stopAccess();
       stopBiometrics();
       stopOutbox();
+      stopPush();
       stopAuth();
     };
   }, []);

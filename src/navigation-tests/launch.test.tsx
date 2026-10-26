@@ -37,12 +37,14 @@ beforeEach(() => useSession.setState({ status: 'unknown' }));
 describe('app launch', () => {
   it('shows onboarding when there is no stored session', async () => {
     mockGetCurrentUser.mockRejectedValue(new Error('UserUnAuthenticatedException'));
+    mockHasApiSession.mockResolvedValueOnce(false);
     await renderRouter('src/app', { initialUrl: '/' });
     expect(await screen.findByText('Every machine, one scan away')).toBeTruthy();
   });
 
   it('skips onboarding once it has been seen on this device', async () => {
     mockGetCurrentUser.mockRejectedValue(new Error('UserUnAuthenticatedException'));
+    mockHasApiSession.mockResolvedValueOnce(false);
     await AsyncStorage.setItem('onboardingSeen', '2026-10-23T00:00:00.000Z');
     try {
       await renderRouter('src/app', { initialUrl: '/' });
@@ -58,6 +60,12 @@ describe('app launch', () => {
     await renderRouter('src/app', { initialUrl: '/' });
     expect(await screen.findByText('Search machines or manuals')).toBeTruthy();
     expect(await screen.findByText(/, Jo$/)).toBeTruthy(); // "Good morning, Jo" etc.
+  });
+
+  it('opens Home from an API session alone (biometric sign-in has no Cognito session)', async () => {
+    mockGetCurrentUser.mockRejectedValue(new Error('UserUnAuthenticatedException'));
+    await renderRouter('src/app', { initialUrl: '/' });
+    expect(await screen.findByText('Search machines or manuals')).toBeTruthy();
   });
 
   it('asks for company and phone when the API needs them (first sign-in)', async () => {
@@ -78,6 +86,7 @@ describe('app launch', () => {
 
   it('sends a cold Google/Apple return link to sign in, not a blank screen', async () => {
     mockGetCurrentUser.mockRejectedValue(new Error('UserUnAuthenticatedException'));
+    mockHasApiSession.mockResolvedValueOnce(false);
     await renderRouter('src/app', { initialUrl: '/auth/callback' });
     expect(await screen.findByText('Machine history, manuals and AI in the pit')).toBeTruthy();
   });

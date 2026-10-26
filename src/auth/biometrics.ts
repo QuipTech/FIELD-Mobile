@@ -1,31 +1,35 @@
-import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 
+import { detectSupport, type BiometricSupport } from './biometricSupport';
+import { createDeviceKey, deleteDeviceKey, isKeyRevoked, signInWithDeviceKey } from './deviceKey';
 import { isAuthError } from './errors';
 import { signInWithEmail, type SignInOutcome } from './flows';
 import {
   forgetSessionCredentialsOnSignOut,
   rememberSessionCredentials,
 } from './sessionCredentials';
+import { useSession } from './session';
 
 /**
- * Face ID / Touch ID / fingerprint sign-in. The email and password live in the Keychain (iOS)
- * or Keystore (Android) behind the device's biometrics: reading them needs a face or finger,
- * and enrolling a new one invalidates them. Unlocking them signs in through the normal Cognito
- * flow, so it works after sign-out and after the session has expired.
+ * Face ID / Touch ID / fingerprint sign-in. A device key (deviceKey.ts) lives in the Keychain
+ * (iOS) or Keystore (Android) behind the device's biometrics: reading it needs a face or finger,
+ * and enrolling a new one invalidates it. Until the API offers device keys, the email and
+ * password are kept there instead and replayed through Cognito. Either way it works after
+ * sign-out and after the session has expired.
  */
 
-export type BiometricKind = 'face' | 'fingerprint';
-/** What this device offers, e.g. `{ kind: 'face', label: 'Face ID' }`. */
-export type BiometricSupport = { kind: BiometricKind; label: string };
+export type { BiometricKind, BiometricSupport } from './biometricSupport';
 
-type Credentials = { email: string; password: string };
+/** What sits behind biometrics: a device key, or (until the API has device keys) the password. */
+type Saved = { email: string } & ({ keyId: string; secretKey: string } | { password: string });
 
 const SECRET_KEY = 'fieldBiometricCredentials';
 /** Not protected: tells the app biometric sign-in is on, and for whom, without a prompt. */
 const EMAIL_KEY = 'fieldBiometricEmail';
+/** Not protected: the device key's id, so turning it off can revoke it without a prompt. */
+const KEY_ID_KEY = 'fieldBiometricKeyId';
 /** Protected items need their own keychain service, apart from non-authenticated ones. */
 const SERVICE = 'fieldBiometric';
 const SECRET_OPTIONS: SecureStore.SecureStoreOptions = {
@@ -42,29 +46,6 @@ type BiometricState = {
 };
 
 export const useBiometrics = create<BiometricState>(() => ({ support: null, email: null }));
-
-const { FACIAL_RECOGNITION, FINGERPRINT } = LocalAuthentication.AuthenticationType;
-
-async function detectSupport(): Promise<BiometricSupport | null> {
-  const [hardware, enrolled, types] = await Promise.all([
-    LocalAuthentication.hasHardwareAsync(),
-    LocalAuthentication.isEnrolledAsync(),
-    LocalAuthentication.supportedAuthenticationTypesAsync(),
-  ]);
-  if (!hardware || !enrolled || !SecureStore.canUseBiometricAuthentication()) return null;
-  if (Platform.OS === 'ios') {
-    return types.includes(FACIAL_RECOGNITION)
-      ? { kind: 'face', label: 'Face ID' }
-      : { kind: 'fingerprint', label: 'Touch ID' };
-  }
-  // Android: the system prompt picks the method, so name it only when there's just one.
-  if (types.length === 1 && types[0] === FACIAL_RECOGNITION) {
-    return { kind: 'face', label: 'face unlock' };
-  }
-  return types.includes(FINGERPRINT) && types.length === 1
-    ? { kind: 'fingerprint', label: 'fingerprint' }
-    : { kind: 'fingerprint', label: 'biometrics' };
-}
 
 /** Reads device support and the saved account. Safe to call again at any time. */
 export async function hydrateBiometrics() {
@@ -99,40 +80,50 @@ const biometricError = (message: string) =>
   Object.assign(new Error(message), { name: 'BiometricError' });
 const isCancel = (error: unknown) => error instanceof Error && /cancel/i.test(error.message);
 
+/** On, cancelled at the prompt, or the API has no device keys yet and no password is to hand. */
+export type EnableOutcome = 'on' | 'cancelled' | 'needsPassword';
+
 /**
- * Saves the credentials behind biometrics. Returns false if the person cancelled the prompt
- * (Android asks for a fingerprint while saving; iOS only asks when signing in).
+ * Turns biometric sign-in on for the signed-in user: registers a device key with the API, or,
+ * until the API offers device keys, saves `password` instead. Android asks for a fingerprint
+ * while saving; iOS only asks when signing in.
  */
-export async function enableBiometricSignIn(email: string, password: string): Promise<boolean> {
+export async function enableBiometricSignIn(
+  email: string,
+  password?: string,
+): Promise<EnableOutcome> {
   const { support } = useBiometrics.getState();
-  if (!support) return false;
-  // No extra biometric check here: they've just entered the password, and the saved item can
-  // only be read with their face or finger anyway. (Android's save still prompts by itself.)
-  // Delete first: iOS prompts when updating an existing item.
-  await SecureStore.deleteItemAsync(SECRET_KEY, { keychainService: SERVICE }).catch(
-    () => undefined,
-  );
+  if (!support) return 'cancelled';
+  const key = await createDeviceKey();
+  if (!key && !password) return 'needsPassword';
+  const secret: Saved = key ? { email, ...key } : { email, password: password! };
+  await disableBiometricSignIn(); // replaces any earlier key; iOS also prompts on updates
   try {
-    const credentials: Credentials = { email, password };
-    await SecureStore.setItemAsync(SECRET_KEY, JSON.stringify(credentials), {
+    await SecureStore.setItemAsync(SECRET_KEY, JSON.stringify(secret), {
       ...SECRET_OPTIONS,
       authenticationPrompt: `Turn on ${support.label} for FIELD`,
     });
   } catch (error) {
-    if (isCancel(error)) return false;
+    if (key) await deleteDeviceKey(key.keyId);
+    if (isCancel(error)) return 'cancelled';
     throw error;
   }
   await SecureStore.setItemAsync(EMAIL_KEY, email);
+  if (key) await SecureStore.setItemAsync(KEY_ID_KEY, key.keyId);
   useBiometrics.setState({ email });
-  return true;
+  return 'on';
 }
 
+/** Turns it off on this phone, and revokes the device key on the API when there is one. */
 export async function disableBiometricSignIn() {
+  const keyId = await SecureStore.getItemAsync(KEY_ID_KEY).catch(() => null);
   await Promise.all([
     SecureStore.deleteItemAsync(SECRET_KEY, { keychainService: SERVICE }),
     SecureStore.deleteItemAsync(EMAIL_KEY),
+    SecureStore.deleteItemAsync(KEY_ID_KEY),
   ]).catch(() => undefined);
   useBiometrics.setState({ email: null });
+  if (keyId) await deleteDeviceKey(keyId);
 }
 
 /** Turns biometric sign-in off if it belongs to `email` (e.g. that account's password changed). */
@@ -142,14 +133,14 @@ export async function forgetBiometricSignIn(email: string) {
 }
 
 /**
- * Unlocks the saved credentials with a biometric prompt and signs in with them. Returns
- * 'cancelled' when the person dismissed the prompt. When the saved credentials no longer work
- * (biometrics re-enrolled, password changed) it turns itself off and throws a BiometricError
- * telling them to use their password.
+ * Unlocks the saved device key (or password) with a biometric prompt and signs in with it.
+ * Returns 'cancelled' when the person dismissed the prompt. When it no longer works (biometrics
+ * re-enrolled, key revoked, password changed) it turns itself off and throws a BiometricError
+ * telling them to sign in another way.
  */
 export async function signInWithBiometrics(): Promise<SignInOutcome | 'cancelled'> {
   const label = useBiometrics.getState().support?.label ?? 'biometric sign-in';
-  const turnBackOn = `Sign in with your password to turn ${label} back on.`;
+  const turnBackOn = `Sign in another way, then turn ${label} back on in Me → Security.`;
   let raw: string | null;
   try {
     raw = await SecureStore.getItemAsync(SECRET_KEY, {
@@ -166,7 +157,19 @@ export async function signInWithBiometrics(): Promise<SignInOutcome | 'cancelled
     throw biometricError(`Your ${label} settings changed. ${turnBackOn}`);
   }
 
-  const { email, password } = JSON.parse(raw) as Credentials;
+  const saved = JSON.parse(raw) as Saved;
+  if ('keyId' in saved) {
+    try {
+      await signInWithDeviceKey(saved);
+    } catch (error) {
+      if (!isKeyRevoked(error)) throw error;
+      await disableBiometricSignIn();
+      throw biometricError(`${label} sign-in was turned off for this phone. ${turnBackOn}`);
+    }
+    useSession.getState().setStatus('signedIn');
+    return 'done';
+  }
+  const { email, password } = saved;
   try {
     const outcome = await signInWithEmail(email, password);
     // Lets Me → Security turn it straight back on if it's switched off this session.

@@ -11,6 +11,7 @@ import {
   signUp,
 } from 'aws-amplify/auth';
 
+import { unregisterPushDevice } from '@/features/notifications/push';
 import { queryClient } from '@/lib/queryClient';
 import { useOutbox } from '@/offline/outbox';
 import { endApiSession, syncApiSession, type CompanyProfile } from './apiSession';
@@ -155,6 +156,7 @@ export const completePasswordReset = (email: string, code: string, newPassword: 
   confirmResetPassword({ username: email, confirmationCode: code, newPassword });
 
 export async function signOutUser() {
+  await unregisterPushDevice(); // needs the API session, so before /auth/logout
   await endApiSession();
   await signOut();
   queryClient.clear(); // the next user must not see this user's cached data

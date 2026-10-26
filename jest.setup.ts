@@ -49,3 +49,18 @@ jest.mock('expo-speech', () => ({
 
 // Diagnostic logs (src/lib/log.ts) would flood test output.
 jest.mock('@/lib/log', () => ({ log: jest.fn() }));
+
+// Push is native only. Permission is denied by default, so screens never register a device;
+// src/features/notifications/__tests__/push.test.ts grants it where it needs to.
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 4 },
+  getPermissionsAsync: jest.fn(async () => ({ granted: false, canAskAgain: false })),
+  requestPermissionsAsync: jest.fn(async () => ({ granted: false, canAskAgain: false })),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  getDevicePushTokenAsync: jest.fn(async () => ({ type: 'ios', data: 'apns-token-a91f2c' })),
+  addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponse: jest.fn(() => null),
+  setNotificationHandler: jest.fn(),
+  setBadgeCountAsync: jest.fn(async () => true),
+}));

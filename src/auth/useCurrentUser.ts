@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
+import { getApiSession } from './apiSession';
+
 export type CurrentUser = {
   /** Cognito `sub` — stable per user, safe for per-user device flags. */
   id: string;
@@ -10,7 +12,9 @@ export type CurrentUser = {
 };
 
 async function loadCurrentUser(): Promise<CurrentUser> {
-  const [{ userId }, attrs] = await Promise.all([getCurrentUser(), fetchUserAttributes()]);
+  const cognito = await Promise.all([getCurrentUser(), fetchUserAttributes()]).catch(() => null);
+  if (!cognito) return apiUser(); // biometric sign-in: no Cognito session, only the API's
+  const [{ userId }, attrs] = cognito;
   const email = attrs.email ?? '';
   return {
     id: userId,
@@ -21,7 +25,19 @@ async function loadCurrentUser(): Promise<CurrentUser> {
   };
 }
 
-/** The signed-in Cognito user's profile (cached for the session). */
+/** The user from the stored API session. */
+async function apiUser(): Promise<CurrentUser> {
+  const user = (await getApiSession())?.user;
+  if (!user) throw new Error('Not signed in');
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName || user.email.split('@')[0] || '',
+    lastName: user.lastName ?? '',
+  };
+}
+
+/** The signed-in user's profile (cached for the session). */
 export function useCurrentUser() {
   return useQuery({ queryKey: ['currentUser'], queryFn: loadCurrentUser, staleTime: Infinity });
 }

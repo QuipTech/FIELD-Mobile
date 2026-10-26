@@ -22,20 +22,20 @@ export const useSession = create<SessionState>((set) => ({
 }));
 
 /**
- * Restores the session on launch. Amplify keeps Cognito tokens; the API session is in secure
- * storage. A stored API session opens the app straight away (works offline); otherwise the
- * app syncs with the API now.
+ * Restores the session on launch. The API session is in secure storage and opens the app
+ * straight away (works offline). It can exist without a Cognito session: biometric sign-in
+ * gets it from the API directly. Otherwise a kept Cognito session syncs with the API now.
  */
 export async function hydrateSession() {
   const { setStatus } = useSession.getState();
+  if (await hasApiSession()) {
+    setStatus('signedIn');
+    return;
+  }
   try {
     await getCurrentUser();
   } catch {
     setStatus('signedOut');
-    return;
-  }
-  if (await hasApiSession()) {
-    setStatus('signedIn');
     return;
   }
   try {

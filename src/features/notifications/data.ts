@@ -39,6 +39,8 @@ export type AppNotification = {
   machineId?: string;
   /** Support case this is about, e.g. "1042". */
   caseId?: string;
+  /** Portal path it is about, e.g. `/knowledge/<id>`; mapped by `notificationRoute`. */
+  link?: string;
   unread: boolean;
 };
 

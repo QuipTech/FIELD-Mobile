@@ -28,6 +28,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.brand,
     marginTop: 7,
   },
+  loadMore: { marginTop: spacing.md },
   markAll: { minHeight: 44, justifyContent: 'center' },
   markAllText: { fontFamily: fontFamily.medium },
 

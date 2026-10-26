@@ -22,7 +22,7 @@ export type ApiTenant = { id: string; name: string; slug?: string };
 /** Sent on a first sign-in, when the API answers `profileRequired`. */
 export type CompanyProfile = { companyName: string; phoneNumber: string };
 
-type SessionPayload = {
+export type SessionPayload = {
   accessToken: string;
   refreshToken: string;
   /** Seconds. */
@@ -97,9 +97,13 @@ export async function syncApiSession(
     headers: { Authorization: `Bearer ${idToken}` },
   });
   if (res.status !== 'signedIn') return 'profileRequired';
-  const { expiresIn, ...session } = res.session;
-  await save({ ...session, expiresAt: expiresAt(expiresIn) });
+  await storeApiSession(res.session);
   return 'signedIn';
+}
+
+/** Keeps a session the API issued (`/auth/sync`, or a biometric sign-in's `/auth/biometric/verify`). */
+export async function storeApiSession({ expiresIn, ...session }: SessionPayload) {
+  await save({ ...session, expiresAt: expiresAt(expiresIn) });
 }
 
 /** New access token via the API refresh token; falls back to a fresh Cognito sync. */

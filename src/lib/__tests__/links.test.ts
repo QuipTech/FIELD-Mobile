@@ -1,5 +1,5 @@
 import { redirectSystemPath } from '@/app/+native-intent';
-import { appPathFor, documentWebUrl } from '../links';
+import { appPathFor, documentWebUrl, notificationRoute } from '../links';
 
 const ID = '9ae726fc-3481-4662-b0bf-6cc651cbaff2';
 
@@ -31,6 +31,23 @@ describe('document links', () => {
     ]) {
       expect(appPathFor(path)).toBe(path);
       expect(redirectSystemPath({ path, initial: true })).toBe(path);
+    }
+  });
+});
+
+describe('notification links', () => {
+  it('maps portal paths to app screens', () => {
+    expect(notificationRoute('/cases/1042')).toBe('/case/1042');
+    expect(notificationRoute('https://staging.quiptechfield.com.au/machines/HT-2201/')).toBe(
+      '/machine/HT-2201',
+    );
+    expect(notificationRoute('/ai-reviews/r1?tab=answer')).toBe('/ai-review/r1');
+    expect(notificationRoute(`/knowledge/${ID}`)).toBe(`/document/${ID}`);
+  });
+
+  it('returns null when the app has no screen for it', () => {
+    for (const link of [undefined, null, '', '/settings', '/cases', '/cases/1042/edit']) {
+      expect(notificationRoute(link)).toBeNull();
     }
   });
 });

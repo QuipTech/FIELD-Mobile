@@ -7,8 +7,9 @@ import type { BiometricSheetProps } from './BiometricSheet';
 import type { MeSectionsProps } from './MeSections';
 
 /**
- * The Settings "Sign in with Face ID" switch for the signed-in account. Turning it on takes
- * effect straight away using this session's password; only when there is none (Google / Apple
+ * The Settings "Sign in with Face ID" switch for the signed-in account. Turning it on registers
+ * a device key, so it takes effect straight away for every account. Until the API offers device
+ * keys it saves this session's password instead, and only when there is none (Google / Apple
  * sign-in) does BiometricSheet ask for it. Turning it off is immediate.
  */
 export function useBiometricSetting(email: string | undefined): {
@@ -21,12 +22,12 @@ export function useBiometricSetting(email: string | undefined): {
   const [turningOn, setTurningOn] = useState(false);
   const label = support?.label ?? '';
 
-  const enable = async (password: string) => {
+  const enable = async (password?: string) => {
     if (!email) return;
     try {
-      if (!(await enableBiometricSignIn(email, password))) return;
-      setSettingUp(false);
-      toast.success(`${label} sign-in is on.`);
+      const outcome = await enableBiometricSignIn(email, password);
+      setSettingUp(outcome === 'needsPassword');
+      if (outcome === 'on') toast.success(`${label} sign-in is on.`);
     } catch {
       toast.error(`Couldn’t turn on ${label}. Please try again.`);
     }
@@ -37,9 +38,8 @@ export function useBiometricSetting(email: string | undefined): {
       return toast.show(`${label} sign-in is off.`);
     }
     const password = email ? await sessionPassword(email) : null;
-    if (!password) return setSettingUp(true);
     setTurningOn(true);
-    await enable(password);
+    await enable(password ?? undefined);
     setTurningOn(false);
   };
 

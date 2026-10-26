@@ -1,4 +1,5 @@
 // Plain JS (not TS) so every tool — including EAS CLI on Node 20 — can load it.
+const fs = require('fs');
 
 /** @typedef {'development' | 'staging' | 'production'} AppEnv */
 /**
@@ -73,6 +74,16 @@ const PERMISSION_PLUGINS = [
   ],
 ];
 
+/**
+ * Firebase config for Android push (FCM). Not committed: EAS builds get it from the
+ * GOOGLE_SERVICES_JSON file env var; local builds read ./google-services.json when present.
+ * Without it the app still builds, but Android can't get a push token.
+ */
+function googleServicesFile() {
+  if (process.env.GOOGLE_SERVICES_JSON) return process.env.GOOGLE_SERVICES_JSON;
+  return fs.existsSync('./google-services.json') ? './google-services.json' : undefined;
+}
+
 /** @returns {AppEnv} */
 function resolveEnv() {
   const value = process.env.APP_ENV;
@@ -116,6 +127,7 @@ module.exports = ({ config }) => {
         monochromeImage: './assets/android-icon-monochrome.png',
       },
       predictiveBackGestureEnabled: false,
+      googleServicesFile: googleServicesFile(),
       // Needs /.well-known/assetlinks.json on the portal with this build's signing fingerprint.
       intentFilters: [
         {
@@ -132,6 +144,15 @@ module.exports = ({ config }) => {
       'expo-dev-client',
       'expo-updates',
       ...PERMISSION_PLUGINS,
+      [
+        // Push via the backend (SNS → APNs / FCM). Adds the iOS aps-environment entitlement.
+        'expo-notifications',
+        {
+          icon: './assets/android-icon-monochrome.png',
+          color: '#39279B',
+          defaultChannel: 'default', // ANDROID_CHANNEL in src/features/notifications/push.ts
+        },
+      ],
       [
         'expo-splash-screen',
         // Logo card on brand violet; BrandSplash (src/features/splash) takes over seamlessly.

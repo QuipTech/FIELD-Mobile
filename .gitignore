@@ -35,3 +35,7 @@ coverage/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Firebase (Android push) config: supplied per build, see app.config.js
+google-services.json
+GoogleService-Info.plist

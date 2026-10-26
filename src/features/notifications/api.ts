@@ -1,7 +1,17 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import { z } from 'zod';
 
 import { http } from '@/lib/http';
+import { notificationRoute } from '@/lib/links';
 import type { AppNotification, NotificationKind } from './data';
 
 /** Notification feed and read state, kept on the server (Backend API Reference §6). */
@@ -20,6 +30,8 @@ const apiNotification = z
     title: z.string().nullish(),
     body: z.string().nullish(),
     message: z.string().nullish(),
+    /** Portal path it is about, e.g. `/cases/1042`. */
+    link: z.string().nullish(),
     createdAt: z.string(),
     isRead: z.boolean().nullish(),
     readAt: z.string().nullish(),
@@ -36,10 +48,13 @@ const apiNotification = z
   .loose();
 export type ApiNotification = z.infer<typeof apiNotification>;
 
-const feed = z.union([
-  z.array(apiNotification),
-  z.object({ items: z.array(apiNotification) }).transform((r) => r.items),
+const feedPage = z.union([
+  z.array(apiNotification).transform((items) => ({ items, nextBefore: null })),
+  z.object({ items: z.array(apiNotification), nextBefore: z.string().nullish() }),
 ]);
+export type NotificationPage = { items: AppNotification[]; nextBefore: string | null };
+type Feed = InfiniteData<NotificationPage, string | undefined>;
+const PAGE_SIZE = 30;
 
 const KIND: Record<string, NotificationKind> = {
   case_message: 'caseUpdate',
@@ -54,7 +69,10 @@ const KIND: Record<string, NotificationKind> = {
 
 export function toNotification(n: ApiNotification): AppNotification {
   const body = n.body || n.message || '';
-  const caseNumber = n.caseNumber ?? n.data?.caseNumber;
+  // The live API sends only `link`; older shapes name the case or machine directly.
+  const route = notificationRoute(n.link);
+  const caseNumber = n.caseNumber ?? n.data?.caseNumber ?? route?.match(/^\/case\/(.+)$/)?.[1];
+  const linkedMachine = route?.match(/^\/machine\/(.+)$/)?.[1];
   return {
     id: n.id,
     kind: KIND[n.kind || n.type || ''] ?? 'alert',
@@ -62,21 +80,28 @@ export function toNotification(n: ApiNotification): AppNotification {
     summary: n.title ? (body.split('\n')[0] ?? '') : '',
     at: n.createdAt,
     body,
-    machineId: n.machineId ?? n.data?.machineId ?? undefined,
+    machineId: n.machineId ?? n.data?.machineId ?? linkedMachine,
+    link: n.link ?? undefined,
     caseId: caseNumber != null ? String(caseNumber) : undefined,
     unread: n.isRead === undefined || n.isRead === null ? !n.readAt : !n.isRead,
   };
 }
 
+/** Newest first, paged with `before` = the previous page's `nextBefore` (null on the last). */
 export function useNotifications() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: notificationKeys.feed,
-    queryFn: async () =>
-      feed.parse(await http.get('/notifications', { query: { pageSize: 50 } })).map(toNotification),
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }): Promise<NotificationPage> => {
+      const query = { limit: PAGE_SIZE, before: pageParam };
+      const page = feedPage.parse(await http.get('/notifications', { query }));
+      return { items: page.items.map(toNotification), nextBefore: page.nextBefore ?? null };
+    },
+    getNextPageParam: (last) => last.nextBefore ?? undefined,
   });
 }
 
-/** Bell badge. Cheap on the server, so it's polled. */
+/** Bell badge, mirrored on the app icon. Cheap on the server, so it's polled. */
 export function useUnreadNotifications() {
   return useQuery({
     queryKey: notificationKeys.unread,
@@ -84,14 +109,20 @@ export function useUnreadNotifications() {
     queryFn: async () => {
       const raw = await http.get<unknown>('/notifications/unread-count');
       const parsed = z.union([z.number(), z.object({ count: z.number() })]).parse(raw);
-      return typeof parsed === 'number' ? parsed : parsed.count;
+      const count = typeof parsed === 'number' ? parsed : parsed.count;
+      if (Platform.OS !== 'web') Notifications.setBadgeCountAsync(count).catch(() => undefined);
+      return count;
     },
   });
 }
 
 function markLocally(queryClient: QueryClient, ids: string[] | 'all') {
-  queryClient.setQueryData<AppNotification[]>(notificationKeys.feed, (items) =>
-    items?.map((n) => (ids === 'all' || ids.includes(n.id) ? { ...n, unread: false } : n)),
+  const read = (n: AppNotification) =>
+    ids === 'all' || ids.includes(n.id) ? { ...n, unread: false } : n;
+  queryClient.setQueryData<Feed>(
+    notificationKeys.feed,
+    (feed) =>
+      feed && { ...feed, pages: feed.pages.map((p) => ({ ...p, items: p.items.map(read) })) },
   );
 }
 
