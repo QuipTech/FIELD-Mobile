@@ -14,6 +14,7 @@ jest.mock('@/lib/env', () => ({
     appEnv: 'development',
     apiBaseUrl: 'https://api.test',
     wsUrl: '',
+    webUrl: 'https://web.test',
     sentryDsn: '',
     scheme: 'quiptechfield',
     cognito: {

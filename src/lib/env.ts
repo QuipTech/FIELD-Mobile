@@ -5,6 +5,7 @@ const envSchema = z.object({
   appEnv: z.enum(['development', 'staging', 'production']),
   apiBaseUrl: z.url(),
   wsUrl: z.string(),
+  webUrl: z.url(),
   sentryDsn: z.string(),
   scheme: z.string().min(1),
   cognito: z.object({
@@ -23,7 +24,12 @@ function loadEnv(): Env {
     // Misconfigured build — fail loudly at startup rather than at first request.
     throw new Error(`Invalid app config (extra): ${z.prettifyError(parsed.error)}`);
   }
-  return { ...parsed.data, apiBaseUrl: parsed.data.apiBaseUrl.replace(/\/+$/, '') };
+  const { apiBaseUrl, webUrl } = parsed.data;
+  return {
+    ...parsed.data,
+    apiBaseUrl: apiBaseUrl.replace(/\/+$/, ''),
+    webUrl: webUrl.replace(/\/+$/, ''),
+  };
 }
 
 export const env: Env = loadEnv();

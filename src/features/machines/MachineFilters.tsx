@@ -1,4 +1,5 @@
-import { MapPin } from 'lucide-react-native';
+// TODO(near-me): restore with the Near me chip below.
+// import { MapPin } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
@@ -15,12 +16,12 @@ const STATUS_OPTIONS: FilterOption<Filters['status']>[] = [
   { value: 'ok', label: 'Running' },
 ];
 
-/** M3 filter row: site (removable), make, status and near me. */
+/** M3 filter row: site (removable), make and status. Near me is hidden for now. */
 export function MachineFilters({
   machines,
   filters,
   onChange,
-  onNearMe,
+  // onNearMe,
 }: {
   machines: Machine[];
   filters: Filters;
@@ -85,7 +86,8 @@ export function MachineFilters({
         allValue="all"
         placeholder="Status"
       />
-      <FilterChip label="Near me" icon={MapPin} onPress={onNearMe} />
+      {/* TODO(near-me): hidden until sorting by distance is built.
+      <FilterChip label="Near me" icon={MapPin} onPress={onNearMe} /> */}
     </ScrollView>
   );
 }

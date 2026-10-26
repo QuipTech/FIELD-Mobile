@@ -1,8 +1,7 @@
-import * as Linking from 'expo-linking';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Share as ShareIcon, SearchX, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
-import { Share, View } from 'react-native';
+import { Platform, Share, View } from 'react-native';
 
 import { Button, EmptyPanel, ErrorState, IconButton, Screen, SkeletonList } from '@/components';
 import { useDocPage, useKnowledgeDoc } from '@/features/knowledge/api';
@@ -11,7 +10,9 @@ import { AskDocSheet } from '@/features/knowledge/AskDocSheet';
 import { DocInfo } from '@/features/knowledge/DocInfo';
 import { DocumentViewer } from '@/features/knowledge/DocumentViewer';
 import type { KnowledgeDoc } from '@/features/knowledge/types';
+import { env } from '@/lib/env';
 import { ApiError } from '@/lib/http';
+import { documentWebUrl } from '@/lib/links';
 
 const toKnowledge = { label: 'Go to Knowledge', onPress: () => router.navigate('/knowledge') };
 
@@ -67,10 +68,12 @@ function Viewer({
   const page = useDocPage(doc.id, pageNumber, doc.title);
   useRecordView(doc.id, pageNumber);
   const share = () => {
-    const url = Linking.createURL(`/document/${doc.id}`, {
-      queryParams: { page: String(pageNumber) },
-    });
-    Share.share({ message: `${doc.title} (p.${pageNumber}) — ${url}` }).catch(() => undefined);
+    const url = documentWebUrl(env.webUrl, doc.id, pageNumber);
+    const label = `${doc.title} (p.${pageNumber})`;
+    // iOS takes the link separately (rich preview in Messages); Android only shares `message`.
+    const content =
+      Platform.OS === 'ios' ? { message: label, url } : { message: `${label}\n${url}` };
+    Share.share(content).catch(() => undefined);
   };
 
   return (

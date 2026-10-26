@@ -2,7 +2,7 @@
 
 /** @typedef {'development' | 'staging' | 'production'} AppEnv */
 /**
- * @typedef {{ apiBaseUrl: string, wsUrl: string, cognito: { region: string, userPoolId: string,
+ * @typedef {{ apiBaseUrl: string, wsUrl: string, webUrl: string, cognito: { region: string, userPoolId: string,
  *   userPoolClientId: string, hostedUiDomain: string } }} EnvConfig
  */
 
@@ -11,6 +11,8 @@
 const STAGING = {
   apiBaseUrl: 'https://staging-api.quiptechfield.com.au',
   wsUrl: '',
+  // Web portal: shared links point here and open the app via Universal Links / App Links.
+  webUrl: 'https://staging.quiptechfield.com.au',
   cognito: {
     region: 'ap-southeast-2',
     userPoolId: 'ap-southeast-2_bxjA9dw2z',
@@ -82,6 +84,7 @@ module.exports = ({ config }) => {
   const appEnv = resolveEnv();
   const env = ENVIRONMENTS[appEnv];
   const suffix = appEnv === 'production' ? '' : `.${appEnv === 'development' ? 'dev' : 'staging'}`;
+  const webHost = new URL(env.webUrl).host;
   const nameSuffix =
     appEnv === 'production' ? '' : ` (${appEnv === 'development' ? 'Dev' : 'Staging'})`;
 
@@ -101,6 +104,8 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: `${BASE_ID}${suffix}`,
       usesAppleSignIn: true,
+      // Needs public/.well-known/apple-app-site-association on the portal (see src/lib/links.ts).
+      associatedDomains: [`applinks:${webHost}`],
     },
     android: {
       package: `${BASE_ID}${suffix}`,
@@ -111,6 +116,15 @@ module.exports = ({ config }) => {
         monochromeImage: './assets/android-icon-monochrome.png',
       },
       predictiveBackGestureEnabled: false,
+      // Needs /.well-known/assetlinks.json on the portal with this build's signing fingerprint.
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [{ scheme: 'https', host: webHost, pathPrefix: '/knowledge' }],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     plugins: [
       'expo-router',
@@ -132,6 +146,7 @@ module.exports = ({ config }) => {
       appEnv,
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || env.apiBaseUrl,
       wsUrl: process.env.EXPO_PUBLIC_WS_URL || env.wsUrl,
+      webUrl: env.webUrl,
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
       scheme: SCHEME,
       cognito: env.cognito,
