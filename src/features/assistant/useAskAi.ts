@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { handlePlanError } from '@/features/billing/planErrors';
 import { ApiError, errorMessage, http, NetworkError } from '@/lib/http';
 import { postEventStream, type SseEvent } from '@/lib/http/sse';
 import { aiKeys } from './api';
@@ -100,6 +101,7 @@ export function useAskAi() {
         await postEventStream('/ai/ask', body, onEvent, abort.current.signal);
       } catch (error) {
         if (abort.current?.signal.aborted) return;
+        handlePlanError(error);
         const text = failureText(error);
         setMessages((m) => [
           ...m.filter((x) => !(x.id === answerId && x.role === 'assistant' && !x.text)),

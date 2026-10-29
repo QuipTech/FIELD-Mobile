@@ -1,15 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import * as Linking from 'expo-linking';
 import { z } from 'zod';
 
 import { http } from '@/lib/http';
-import type { Invoice, InvoiceStatus, Plan, PlanStatus } from './data';
+import type { Plan, PlanStatus } from './data';
 
-/** Subscription, invoices, Stripe portal and team size (Backend API Reference §5). */
+/** Subscription and team size (Backend API Reference §5). Billing lives in features/billing. */
 
 export const meKeys = {
   subscription: ['organisation', 'subscription'] as const,
-  invoices: (org: boolean) => ['billing', 'invoices', org] as const,
   team: ['team', 'summary'] as const,
 };
 
@@ -56,89 +54,12 @@ export function toPlan(raw: unknown): Plan {
   };
 }
 
-/** The organisation's plan. Everyone can read it; billing actions need `admin.manage_settings`. */
+/** The organisation's plan. Everyone can read it; billing actions need `billing.manage`. */
 export function useSubscription() {
   return useQuery({
     queryKey: meKeys.subscription,
     staleTime: 10 * 60_000,
     queryFn: async () => toPlan(await http.get('/organisation/subscription')),
-  });
-}
-
-const apiInvoice = z
-  .object({
-    id: z.string(),
-    status: z.string().nullish(),
-    createdAt: z.string().nullish(),
-    issuedAt: z.string().nullish(),
-    date: z.string().nullish(),
-    totalCents: z.number().nullish(),
-    total: z.number().nullish(),
-    hostedInvoiceUrl: z.string().nullish(),
-    hasPdf: z.boolean().nullish(),
-  })
-  .loose();
-
-const INVOICE_STATUS: Record<string, InvoiceStatus> = {
-  paid: 'paid',
-  open: 'due',
-  draft: 'due',
-  uncollectible: 'failed',
-  void: 'failed',
-  failed: 'failed',
-};
-
-export function toInvoice(i: z.infer<typeof apiInvoice>): Invoice {
-  return {
-    id: i.id,
-    issuedOn: i.issuedAt || i.createdAt || i.date || '',
-    status: INVOICE_STATUS[i.status ?? ''] ?? 'due',
-    totalCents: i.totalCents ?? i.total ?? undefined,
-    url: i.hostedInvoiceUrl ?? undefined,
-    hasPdf: i.hasPdf ?? true,
-  };
-}
-
-const invoiceList = z.union([
-  z.array(apiInvoice),
-  z.object({ items: z.array(apiInvoice) }).transform((r) => r.items),
-]);
-
-const invoiceBase = (org: boolean) =>
-  org ? '/organisation/billing/invoices' : '/me/billing/invoices';
-
-/** Organisation invoices for billing admins, otherwise the user's own (TECH) invoices. */
-export function useInvoices(org: boolean) {
-  return useQuery({
-    queryKey: meKeys.invoices(org),
-    queryFn: async () => invoiceList.parse(await http.get(invoiceBase(org))).map(toInvoice),
-  });
-}
-
-const urlResponse = z.object({ url: z.string() });
-
-/** Opens the invoice PDF (a short-lived signed URL) in the browser. */
-export function useOpenInvoice(org: boolean) {
-  return useMutation({
-    mutationFn: async (invoice: Invoice) => {
-      const url = invoice.hasPdf
-        ? urlResponse.parse(
-            await http.get(`${invoiceBase(org)}/${encodeURIComponent(invoice.id)}/pdf`),
-          ).url
-        : invoice.url;
-      if (!url) throw new Error('This invoice has no PDF yet.');
-      await Linking.openURL(url);
-    },
-  });
-}
-
-/** Opens the Stripe customer portal. The URL is single-use, so it's fetched on every tap. */
-export function useBillingPortal(org: boolean) {
-  return useMutation({
-    mutationFn: async () => {
-      const path = org ? '/organisation/billing/portal-session' : '/me/billing/portal-session';
-      await Linking.openURL(urlResponse.parse(await http.post(path)).url);
-    },
   });
 }
 

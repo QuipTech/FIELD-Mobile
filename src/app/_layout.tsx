@@ -7,6 +7,8 @@ import { configureAmplify } from '@/auth/amplify';
 import { registerApiTokenProvider } from '@/auth/apiSession';
 import { startBiometricSync } from '@/auth/biometrics';
 import { signOutUser } from '@/auth/flows';
+import { startEntitlementSync } from '@/features/billing/entitlements';
+import { startPlanErrorPrompts } from '@/features/billing/planErrors';
 import { runAuth } from '@/auth/runAuth';
 import { hydrateSession, listenForAuthEvents, useSession } from '@/auth/session';
 import { startPushSync } from '@/features/notifications/push';
@@ -86,12 +88,16 @@ function RootStack() {
     hydrateOnboarding();
     hydrateSession();
     const stopAccess = startAccessSync();
+    const stopEntitlements = startEntitlementSync();
+    const stopPlanErrors = startPlanErrorPrompts();
     const stopBiometrics = startBiometricSync();
     const stopOutbox = startOutboxSync();
     const stopPush = startPushSync();
     const stopAuth = listenForAuthEvents();
     return () => {
       stopAccess();
+      stopEntitlements();
+      stopPlanErrors();
       stopBiometrics();
       stopOutbox();
       stopPush();

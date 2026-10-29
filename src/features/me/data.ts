@@ -19,30 +19,6 @@ export type MeData = {
   language: string;
 };
 
-export type InvoiceStatus = 'paid' | 'due' | 'failed';
-export type Invoice = {
-  id: string;
-  issuedOn: string;
-  status: InvoiceStatus;
-  /** Integer cents, when the API sends a total. */
-  totalCents?: number;
-  /** Stripe-hosted invoice page. */
-  url?: string;
-  hasPdf: boolean;
-};
-
-export type BillingData = {
-  plan?: Plan;
-  /** The organisation's allowance (admins). */
-  allowance: { used: number; limit: number };
-  /** The signed-in user's own queries this period (everyone). */
-  personalAllowance: { used: number; limit: number };
-  addOns: { id: string; label: string; count: number }[];
-  /** Card details live in Stripe; the API only links to its portal. */
-  payment: { brand?: string; last4?: string; processor: string };
-  invoices: Invoice[];
-};
-
 /** Admin-only: who is on the account. */
 export type TeamSummary = { users: number; sites?: number };
 

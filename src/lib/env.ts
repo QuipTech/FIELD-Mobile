@@ -8,6 +8,11 @@ const envSchema = z.object({
   webUrl: z.url(),
   sentryDsn: z.string(),
   scheme: z.string().min(1),
+  /** Per platform: pay the personal fee in an in-app browser, or on the web portal. */
+  personalCheckout: z.object({
+    ios: z.enum(['in-app', 'web']),
+    android: z.enum(['in-app', 'web']),
+  }),
   cognito: z.object({
     region: z.string().min(1),
     userPoolId: z.string().min(1),

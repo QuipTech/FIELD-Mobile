@@ -15,6 +15,7 @@ import {
   Text,
   toast,
 } from '@/components';
+import { useFeature } from '@/features/billing/entitlements';
 import { useTeam, useTeamActions, useTeamRoles, type TeamMember } from '@/features/team/api';
 import { errorMessage } from '@/lib/http';
 
@@ -32,6 +33,8 @@ function useDebounced(value: string, ms = 300) {
 /** Organisation admins: who's on the account, their roles, invites and removals. */
 export default function TeamRoute() {
   const { capabilities } = useRole();
+  // Inviting beyond the plan's seats is a plan feature.
+  const canInvite = useFeature('org.users.unlimited');
   const [search, setSearch] = useState('');
   const team = useTeam(useDebounced(search));
   const roles = useTeamRoles();
@@ -60,17 +63,18 @@ export default function TeamRoute() {
     <DetailScreen>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/team-invite')}
-              accessibilityRole="button"
-              hitSlop={8}
-            >
-              <Text variant="label" color="primaryStrong">
-                Invite
-              </Text>
-            </Pressable>
-          ),
+          headerRight: () =>
+            canInvite ? (
+              <Pressable
+                onPress={() => router.push('/team-invite')}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text variant="label" color="primaryStrong">
+                  Invite
+                </Text>
+              </Pressable>
+            ) : null,
         }}
       />
       <SearchField value={search} onChange={setSearch} label="Search people" />

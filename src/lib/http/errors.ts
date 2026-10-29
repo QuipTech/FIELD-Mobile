@@ -75,6 +75,12 @@ export function errorMessage(error: unknown): string {
     if (error.code === 'machine_inactive') {
       return "This machine isn't active. An admin can activate it on the website.";
     }
+    if (error.code === 'account_suspended') {
+      return 'Your account is suspended for an overdue invoice. Contact your organisation admin.';
+    }
+    if (error.code === 'feature_not_in_plan') {
+      return error.message || "Your organisation's plan doesn't include this feature.";
+    }
     if (error.isForbidden) return "You don't have permission to do that.";
     if (error.status >= 500) return 'Something went wrong on our side. Try again.';
     return error.message;

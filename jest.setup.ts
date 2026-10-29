@@ -17,6 +17,7 @@ jest.mock('@/lib/env', () => ({
     webUrl: 'https://web.test',
     sentryDsn: '',
     scheme: 'quiptechfield',
+    personalCheckout: { ios: 'in-app', android: 'in-app' },
     cognito: {
       region: 'ap-southeast-2',
       userPoolId: 'ap-southeast-2_test',
@@ -39,6 +40,12 @@ jest.mock('expo-speech-recognition', () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('./src/test/mocks/speechRecognition'),
 );
+
+// The in-app browser is native only; billing tests check what was opened.
+jest.mock('expo-web-browser', () => ({
+  openAuthSessionAsync: jest.fn(async () => ({ type: 'cancel' })),
+  openBrowserAsync: jest.fn(async () => ({ type: 'cancel' })),
+}));
 
 // Text-to-speech is native only.
 jest.mock('expo-speech', () => ({

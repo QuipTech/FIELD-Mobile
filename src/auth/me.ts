@@ -24,8 +24,8 @@ export const CAPABILITY_PERMISSION: Record<keyof Capabilities, string> = {
   canManageMachines: 'machine.manage',
 };
 
-/** Billing screens need this permission on top of being signed in. */
-export const BILLING_PERMISSION = 'admin.manage_settings';
+/** Organisation billing (plan, invoices, Stripe portal): Owner and Organisation Admin. */
+export const BILLING_PERMISSION = 'billing.manage';
 
 export function capabilitiesFrom(
   permissions: readonly string[],

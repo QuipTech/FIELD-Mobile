@@ -36,6 +36,13 @@ const BASE_ID = 'au.com.quiptechfield.field';
 // Bare workflow (android/ exists) disallows runtimeVersion policies; keep this equal to the app version.
 const APP_VERSION = '1.0.0';
 const FACE_ID_PERMISSION = 'Allow $(PRODUCT_NAME) to use Face ID to sign you in.';
+/**
+ * How technicians pay their personal monthly fee. 'in-app' opens the Stripe invoice in an in-app
+ * browser; 'web' shows the status only and asks them to pay on the web portal. iOS stays on 'web'
+ * until the App Store question is settled: Apple may require in-app purchase for a personal
+ * subscription paid inside the app (organisation billing is fine).
+ */
+const PERSONAL_CHECKOUT = { ios: 'web', android: 'in-app' };
 const MICROPHONE_PERMISSION =
   'Allow $(PRODUCT_NAME) to use the microphone so you can ask AI by voice.';
 
@@ -143,6 +150,8 @@ module.exports = ({ config }) => {
       'expo-status-bar',
       'expo-dev-client',
       'expo-updates',
+      // Stripe pages (invoices, Customer Portal) open in an in-app browser session.
+      'expo-web-browser',
       ...PERMISSION_PLUGINS,
       [
         // Push via the backend (SNS → APNs / FCM). Adds the iOS aps-environment entitlement.
@@ -171,6 +180,7 @@ module.exports = ({ config }) => {
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
       scheme: SCHEME,
       cognito: env.cognito,
+      personalCheckout: PERSONAL_CHECKOUT,
       eas: { projectId: EAS_PROJECT_ID },
     },
   };

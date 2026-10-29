@@ -4,38 +4,15 @@ import { View } from 'react-native';
 import { BrandButton } from '@/components/BrandButton/BrandButton';
 import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
-import { formatDate } from '@/lib/date';
 import { formatNumber } from '@/lib/format';
 import { colors } from '@/theme';
-import type { BillingData, Plan } from './data';
+import type { Plan } from './data';
 import { PLAN_STATUS } from './status';
 import { styles } from './styles';
 
-/** Plan name, status, what it's billed on and when it renews. */
-export function PlanOverview({ plan }: { plan: Plan }) {
-  const status = PLAN_STATUS[plan.status];
-  const assets = `${formatNumber(plan.assets)} asset${plan.assets === 1 ? '' : 's'}`;
-  return (
-    <View style={styles.card}>
-      <View style={styles.splitRow}>
-        <Text style={styles.planTitle} accessibilityRole="header">
-          {plan.name}
-        </Text>
-        <Pill label={status.label} tone={status.tone} />
-      </View>
-      <Text variant="caption" color="inkMuted">
-        Billed per asset, {plan.cadence === 'monthly' ? 'monthly' : 'annually'} · {assets}
-      </Text>
-      <View style={styles.hairline} />
-      <View style={styles.splitRow}>
-        <Text variant="caption" color="inkMuted">
-          {plan.status === 'cancelled' ? 'Ends' : 'Renews'}
-        </Text>
-        <Text style={styles.planDate}>{formatDate(plan.renewsOn)}</Text>
-      </View>
-    </View>
-  );
-}
+type Allowance = { used: number; limit: number };
+/** Card details live in Stripe; the API only links to its portal. */
+type Payment = { brand?: string; last4?: string; processor: string };
 
 /** What a technician sees: the plan is active, and someone else pays for it. */
 export function ManagedPlanCard({ plan }: { plan: Plan }) {
@@ -60,7 +37,7 @@ export function AllowanceCard({
   used,
   limit,
   label = 'AI queries used this period',
-}: BillingData['allowance'] & { label?: string }) {
+}: Allowance & { label?: string }) {
   const over = used > limit;
   const pct = limit > 0 ? Math.min(used / limit, 1) * 100 : 0;
   return (
@@ -91,13 +68,7 @@ export function AllowanceCard({
   );
 }
 
-export function PaymentCard({
-  payment,
-  onManage,
-}: {
-  payment: BillingData['payment'];
-  onManage: () => void;
-}) {
+export function PaymentCard({ payment, onManage }: { payment: Payment; onManage: () => void }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardRow}>
