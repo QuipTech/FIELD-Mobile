@@ -25,6 +25,8 @@ export type PaymentRequiredProps = {
   checking: boolean;
   onCheckAgain: () => void;
   onSignOut: () => void;
+  /** Apple requires deleting an account to stay possible, so the popup links to it too. */
+  onDeleteAccount: () => void;
 };
 
 /**
@@ -82,16 +84,13 @@ export function PaymentRequired(props: PaymentRequiredProps) {
                 Card details go to Stripe, never to FIELD.
               </Text>
             </View>
-            <Pressable
-              onPress={props.onSignOut}
-              accessibilityRole="button"
-              hitSlop={8}
-              style={({ pressed }) => pressed && { opacity: 0.5 }}
-            >
-              <Text variant="caption" color="inkMuted" style={styles.signOut}>
-                Sign out
+            <View style={styles.footerLinks}>
+              <FooterLink label="Sign out" onPress={props.onSignOut} />
+              <Text variant="caption" color="inkSubtle">
+                ·
               </Text>
-            </Pressable>
+              <FooterLink label="Delete account" onPress={props.onDeleteAccount} />
+            </View>
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -168,5 +167,20 @@ function PayActions({
     <View style={styles.actions}>
       <BrandButton label="Pay now" onPress={() => setShowForm(true)} />
     </View>
+  );
+}
+
+function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      hitSlop={8}
+      style={({ pressed }) => pressed && { opacity: 0.5 }}
+    >
+      <Text variant="caption" color="inkMuted" style={styles.signOut}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

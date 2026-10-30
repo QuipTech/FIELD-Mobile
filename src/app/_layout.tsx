@@ -30,6 +30,7 @@ const DETAIL_SCREENS = {
   'new-case': 'New case',
   'add-machine': 'Add machine',
   team: 'Team & roles',
+  'delete-account': 'Delete account',
   'team-invite': 'Invite',
   'notifications/index': 'Notifications',
   // The machine screens set their own titles.

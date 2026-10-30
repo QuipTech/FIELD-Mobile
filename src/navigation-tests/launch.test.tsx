@@ -112,6 +112,7 @@ describe('signed-in screens', () => {
     ['/machine/HT-2201/compare', 'Serial no.'],
     ['/cases', "Brake pressure alarm won't clear"],
     ['/billing', '142 / 500 queries'],
+    ['/delete-account', 'Type DELETE to confirm'],
     ['/new-case', 'Raise case'],
     ['/ai-history', 'Show me the drill rod change procedure'],
     ['/case/1042', 'Checking pump firmware version.'],

@@ -72,6 +72,7 @@ export default function PaymentRequiredRoute() {
       checking={checking}
       onCheckAgain={checkAgain}
       onSignOut={signOut}
+      onDeleteAccount={() => router.push('/delete-account')}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   LogOut,
   Sparkles,
   ScanFace,
+  Trash2,
   Users,
 } from 'lucide-react-native';
 
@@ -29,7 +30,8 @@ export type MeDestination =
   | 'language'
   | 'aiHistory'
   | 'replayGuide'
-  | 'signOut';
+  | 'signOut'
+  | 'deleteAccount';
 
 export type MeSectionsProps = {
   data: MeData;
@@ -46,7 +48,7 @@ export type MeSectionsProps = {
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-/** The M9 settings list, grouped, with sign out on its own at the end. */
+/** The M9 settings list, grouped, with sign out and delete account on their own at the end. */
 export function MeSections({
   data,
   isAdmin,
@@ -117,6 +119,12 @@ export function MeSections({
           label="Sign out"
           chevron={false}
           onPress={go('signOut')}
+        />
+        <GroupedRow
+          icon={Trash2}
+          iconTone="danger"
+          label="Delete account"
+          onPress={go('deleteAccount')}
         />
       </GroupedList>
     </>

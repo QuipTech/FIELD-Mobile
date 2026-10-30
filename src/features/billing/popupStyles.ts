@@ -50,4 +50,5 @@ export const popupStyles = StyleSheet.create({
   centered: { textAlign: 'center' },
   secure: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xxs },
   signOut: { textDecorationLine: 'underline', paddingVertical: spacing.xxs },
+  footerLinks: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

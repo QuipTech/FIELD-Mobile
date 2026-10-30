@@ -107,6 +107,7 @@ describe('Payment required popup', () => {
     onPay: jest.fn(),
     onCheckAgain: jest.fn(),
     onSignOut: jest.fn(),
+    onDeleteAccount: jest.fn(),
   };
 
   it('shows the fee and lets the user pay or sign out', async () => {

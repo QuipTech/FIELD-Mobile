@@ -138,6 +138,7 @@ const EXACT: Record<string, unknown> = {
     hostedInvoiceUrl: null,
   },
   '/me/billing/invoices': [],
+  '/users/me/deletion-eligibility': { canDelete: true, blockedReason: null },
   '/organisation/entitlements': ['fleet.register', 'ai.assistant', 'asset.history'].map((f) => ({
     featureCode: f,
     isActive: true,

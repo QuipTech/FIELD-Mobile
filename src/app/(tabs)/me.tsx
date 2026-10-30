@@ -27,6 +27,7 @@ const ROUTES = {
   downloads: '/offline-sync',
   sync: '/offline-sync',
   cases: '/cases',
+  deleteAccount: '/delete-account',
 } as const satisfies Partial<Record<MeDestination, Href>>;
 
 function confirmSignOut() {
