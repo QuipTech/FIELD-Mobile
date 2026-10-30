@@ -130,6 +130,11 @@ function RootStack() {
             <Stack.Screen name="capture-photo" options={CAMERA_SCREEN} />
             <Stack.Screen name="knowledge/search" options={FADE} />
             <Stack.Screen name="payment-required" options={PAYMENT_GATE} />
+            {/* Stripe's return link on Android: closes itself straight away. */}
+            <Stack.Screen
+              name="billing-return"
+              options={{ ...PAYMENT_GATE, animation: 'none', gestureEnabled: true }}
+            />
           </Stack.Protected>
           <Stack.Protected guard={status === 'profileRequired'}>
             <Stack.Screen name="complete-profile" options={BARE} />

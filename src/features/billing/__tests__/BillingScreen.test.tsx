@@ -59,6 +59,8 @@ async function enterAddress() {
 }
 
 const ADDRESS = { line1: '1 Pit Rd', city: 'Kalgoorlie', state: 'WA', postalCode: '6430' };
+// Sent with every payment so Stripe returns to the app, not the website.
+const PAYMENT_BODY = { ...ADDRESS, returnTo: 'app' };
 const PAY_URL = 'https://invoice.stripe.com/i/acct_test/inv_1';
 
 beforeEach(() => {
@@ -106,9 +108,9 @@ describe('Billing — personal', () => {
     expect(mockCalls).toContainEqual({
       method: 'POST',
       path: '/me/billing/payment',
-      body: ADDRESS,
+      body: PAYMENT_BODY,
     });
-    expect(openAuthSession).toHaveBeenCalledWith(PAY_URL, expect.any(String));
+    expect(openAuthSession).toHaveBeenCalledWith(PAY_URL, 'quiptechfield://billing-return');
     const check = mockCalls.findIndex((c) => c.path === '/me/billing/payment/check');
     const reread = mockCalls.findLastIndex((c) => c.method === 'GET' && c.path === '/me/billing');
     expect(check).toBeGreaterThan(-1);

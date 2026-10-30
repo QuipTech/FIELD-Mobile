@@ -5,7 +5,7 @@ import { AppState } from 'react-native';
 
 import { http } from '@/lib/http';
 import type { BillingAddress } from './address';
-import { openDocument, openStripePage } from './stripeBrowser';
+import { openDocument, openStripePage, RETURN_TO_APP } from './stripeBrowser';
 import {
   billingKeys,
   paymentResponse,
@@ -57,7 +57,9 @@ export function usePayNow() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (address: BillingAddress) => {
-      const res = paymentResponse.parse(await http.post('/me/billing/payment', address));
+      const res = paymentResponse.parse(
+        await http.post('/me/billing/payment', { ...address, ...RETURN_TO_APP }),
+      );
       try {
         if (res.paymentUrl) await openStripePage(res.paymentUrl);
       } finally {
@@ -105,7 +107,8 @@ export function useBillingPortal(scope: Scope) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      await openStripePage(urlResponse.parse(await http.post(`${BASE[scope]}/portal-session`)).url);
+      const session = await http.post(`${BASE[scope]}/portal-session`, RETURN_TO_APP);
+      await openStripePage(urlResponse.parse(session).url);
     },
     onSettled: () => client.invalidateQueries({ queryKey: billingKeys.all }),
   });
