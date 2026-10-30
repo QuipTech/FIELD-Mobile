@@ -3,10 +3,9 @@ import { View } from 'react-native';
 
 import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
-import { formatDate } from '@/lib/date';
 import { colors } from '@/theme';
 import type { Plan } from './data';
-import { PLAN_STATUS } from './status';
+import { PLAN_STATUS, planWhen } from './status';
 import { styles } from './styles';
 
 export type ProfileSummaryProps = {
@@ -47,7 +46,7 @@ export function ProfileSummary({ name, email, initials, isAdmin, site }: Profile
 /** Current subscription at a glance. */
 export function PlanCard({ plan }: { plan: Plan }) {
   const status = PLAN_STATUS[plan.status];
-  const when = `${plan.status === 'cancelled' ? 'Ends' : 'Renews'} ${formatDate(plan.renewsOn)}`;
+  const when = planWhen(plan);
   return (
     <View
       style={styles.card}

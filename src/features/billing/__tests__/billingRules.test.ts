@@ -1,6 +1,8 @@
 import { Alert } from 'react-native';
 
 import { ApiError, errorMessage } from '@/lib/http';
+import { toPlan } from '@/features/me/api';
+import { planWhen } from '@/features/me/status';
 import { validateAddress } from '../address';
 import { formatBillingMonth, formatCents, formatPeriod } from '../format';
 import { handlePlanError } from '../planErrors';
@@ -59,5 +61,46 @@ describe('plan errors', () => {
     alert.mockClear();
     handlePlanError(new ApiError(403, 'Forbidden'));
     expect(alert).not.toHaveBeenCalled();
+  });
+});
+
+describe('organisation plan (GET /organisation/subscription)', () => {
+  const base = { planCode: 'ASSET_PRO', planName: 'Asset Pro', assetCount: 12 };
+
+  it('reads the free plan as free, not active', () => {
+    const plan = toPlan({
+      ...base,
+      status: 'free',
+      planCode: 'free',
+      planName: 'Free',
+      endsOn: null,
+    });
+    expect(plan.status).toBe('free');
+    expect(planWhen(plan)).toBe('No paid plan');
+  });
+
+  it('reads when a plan ends or renews', () => {
+    const ending = toPlan({
+      ...base,
+      status: 'expiring_soon',
+      endsOn: '2027-04-14',
+      renewsAutomatically: true,
+    });
+    expect(ending.status).toBe('expiringSoon');
+    expect(planWhen(ending)).toBe('Ends 14 Apr 2027');
+    const renewing = toPlan({
+      ...base,
+      status: 'active',
+      endsOn: '2027-04-14',
+      renewsAutomatically: true,
+    });
+    expect(planWhen(renewing)).toBe('Renews 14 Apr 2027');
+    const contract = toPlan({
+      ...base,
+      status: 'active',
+      endsOn: '2027-04-14',
+      renewsAutomatically: false,
+    });
+    expect(planWhen(contract)).toBe('Ends 14 Apr 2027');
   });
 });

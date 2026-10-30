@@ -5,6 +5,7 @@ const PLAN: Plan = {
   name: 'Standard plan',
   status: 'active',
   renewsOn: '2027-04-14T12:00:00Z',
+  renewsAutomatically: true,
   cadence: 'monthly',
   assets: 42,
 };

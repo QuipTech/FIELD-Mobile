@@ -44,8 +44,17 @@ export type InvoiceItem = {
   status: string;
   /** Incl. GST; null while tax is being calculated. */
   totalCents: number | null;
+  /** Paid so far, when the API says (organisation invoices). */
+  paidCents: number | null;
   hasPdf: boolean;
+  /** Stripe's hosted page for an invoice that still needs paying; null otherwise. */
+  payUrl: string | null;
 };
+
+// Invoices that can't be paid any more, or already are.
+const SETTLED = new Set(['paid', 'void', 'replaced', 'refunded', 'draft', 'final']);
+const payUrlOf = (status: string, url: string | null | undefined) =>
+  url && !SETTLED.has(status) ? url : null;
 
 export const personalInvoices = z.array(
   z
@@ -54,6 +63,7 @@ export const personalInvoices = z.array(
       periodStart: z.string().nullish(),
       status: z.string(),
       totalCents: cents.nullish(),
+      hostedInvoiceUrl: z.string().nullish(),
     })
     .loose()
     .transform((i): InvoiceItem => ({
@@ -61,7 +71,9 @@ export const personalInvoices = z.array(
       periodStart: i.periodStart ?? null,
       status: i.status,
       totalCents: i.totalCents ?? null,
+      paidCents: null,
       hasPdf: true,
+      payUrl: payUrlOf(i.status, i.hostedInvoiceUrl),
     })),
 );
 
@@ -71,7 +83,9 @@ export const organisationInvoices = z.array(
       id: z.string(),
       status: z.string(),
       totalCents: cents.nullish(),
+      amountPaidCents: cents.nullish(),
       hasPdf: z.boolean().nullish(),
+      hostedInvoiceUrl: z.string().nullish(),
       periodStart: z.string().nullish(),
       createdAt: z.string().nullish(),
     })
@@ -81,7 +95,9 @@ export const organisationInvoices = z.array(
       periodStart: i.periodStart ?? i.createdAt ?? null,
       status: i.status,
       totalCents: i.totalCents ?? null,
+      paidCents: i.amountPaidCents ?? null,
       hasPdf: i.hasPdf ?? false,
+      payUrl: payUrlOf(i.status, i.hostedInvoiceUrl),
     })),
 );
 
@@ -107,7 +123,15 @@ export type OrganisationPlan = z.infer<typeof organisationPlan>;
 
 export const organisationSummary = z
   .object({
-    account: z.object({ suspendedAt: z.string().nullish() }).loose(),
+    account: z
+      .object({
+        name: z.string().nullish(),
+        billingEmail: z.string().nullish(),
+        suspendedAt: z.string().nullish(),
+        /** False until Stripe knows the organisation: the Customer Portal can't open yet. */
+        hasStripeCustomer: z.boolean().nullish(),
+      })
+      .loose(),
     plan: organisationPlan.nullish(),
     thisMonth: z
       .object({

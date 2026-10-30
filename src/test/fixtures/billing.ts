@@ -27,7 +27,13 @@ export const PAID = {
 };
 
 export const ORG_SUMMARY = {
-  account: { id: 'ba-1', name: 'Mintek', suspendedAt: null, hasStripeCustomer: true },
+  account: {
+    id: 'ba-1',
+    name: 'Mintek',
+    billingEmail: 'accounts@mintek.com.au',
+    suspendedAt: null,
+    hasStripeCustomer: true,
+  },
   plan: {
     id: 'sub-1',
     planCode: 'ASSET_PRO',

@@ -22,6 +22,17 @@ export type PersonalSectionProps = {
   onPay: (address: BillingAddress) => void;
 };
 
+/** The terms the portal states before payment. */
+export const PAYMENT_TERMS =
+  'A new payment is due each calendar month; nothing is charged automatically. No trial or ' +
+  'part-month discount applies.';
+
+/** "1 Oct 2026 – 31 Oct 2026 · Australia/Brisbane": the billing month is in that time zone. */
+export function periodLine(status: PersonalStatus): string {
+  const period = formatPeriod(status.periodStart, status.periodEnd);
+  return status.timezone ? `${period} · ${status.timezone}` : period;
+}
+
 /** The technician's own monthly fee: exempt, covered, due, or paid. */
 export function PersonalSection(props: PersonalSectionProps) {
   const { status } = props;
@@ -35,13 +46,7 @@ export function PersonalSection(props: PersonalSectionProps) {
       />
     );
   if (status.paymentRequired) return <PaymentDue {...props} />;
-  return (
-    <StatusCard
-      title="Paid for this month"
-      caption={formatPeriod(status.periodStart, status.periodEnd)}
-      pill="Paid"
-    />
-  );
+  return <StatusCard title="Paid for this month" caption={periodLine(status)} pill="Paid" />;
 }
 
 function StatusCard({ title, caption, pill }: { title: string; caption: string; pill?: string }) {
@@ -93,8 +98,11 @@ function PaymentDue({
         </Text>
       </View>
       <Text variant="caption" color="inkMuted">
-        {formatPeriod(status.periodStart, status.periodEnd)}
+        {periodLine(status)}
         {status.totalCents != null ? ` · ${formatCents(status.totalCents)} incl. GST` : ''}
+      </Text>
+      <Text variant="caption" color="inkMuted" style={billingStyles.terms}>
+        {PAYMENT_TERMS}
       </Text>
       <View style={styles.hairline} />
 

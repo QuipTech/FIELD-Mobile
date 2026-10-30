@@ -15,6 +15,7 @@ export type OrganisationSectionProps = PlanActions & {
   invoices: InvoiceItem[];
   onManagePayment: () => void;
   onOpenInvoice: (invoice: InvoiceItem) => void;
+  onPayInvoice: (invoice: InvoiceItem) => void;
 };
 
 const METRICS: Record<string, string> = {
@@ -29,9 +30,10 @@ export function OrganisationSection({
   invoices,
   onManagePayment,
   onOpenInvoice,
+  onPayInvoice,
   ...actions
 }: OrganisationSectionProps) {
-  const { account, overdue, thisMonth, plan } = summary;
+  const { account, overdue, plan } = summary;
   return (
     <>
       {account.suspendedAt ? (
@@ -59,22 +61,7 @@ export function OrganisationSection({
         </View>
       )}
 
-      <SectionTitle>This month</SectionTitle>
-      <View style={styles.card}>
-        <View style={billingStyles.stats}>
-          <Stat label="Active machines today" value={formatNumber(thisMonth.activeToday)} />
-          <Stat label="Peak so far" value={formatNumber(thisMonth.peakSoFar)} />
-          {thisMonth.rateCents != null && (
-            <Stat label="Per machine" value={formatCents(thisMonth.rateCents)} />
-          )}
-          {thisMonth.estimateCents != null && (
-            <Stat label="Charge so far, ex GST" value={formatCents(thisMonth.estimateCents)} />
-          )}
-        </View>
-        <Text variant="caption" color="inkMuted">
-          Invoiced on {formatBillingDay(thisMonth.invoicedOn)}.
-        </Text>
-      </View>
+      <ThisMonth summary={summary} />
 
       {summary.allowance.length > 0 && (
         <>
@@ -97,14 +84,10 @@ export function OrganisationSection({
         </>
       )}
 
-      <SectionTitle>Payment method</SectionTitle>
-      <PaymentCard payment={{ processor: 'Stripe' }} onManage={onManagePayment} />
-      <Text variant="caption" color="inkMuted">
-        A card or direct debit saved in Stripe pays new invoices automatically.
-      </Text>
+      <PaymentMethod account={account} onManage={onManagePayment} />
 
       <SectionTitle>Invoices</SectionTitle>
-      <InvoiceList invoices={invoices} onOpen={onOpenInvoice} />
+      <InvoiceList invoices={invoices} onOpen={onOpenInvoice} onPay={onPayInvoice} />
     </>
   );
 }
@@ -145,5 +128,65 @@ function Stat({ label, value }: { label: string; value: string }) {
         {label}
       </Text>
     </View>
+  );
+}
+
+function ThisMonth({ summary }: { summary: OrganisationSummary }) {
+  const { thisMonth, plan } = summary;
+  return (
+    <>
+      <SectionTitle>This month</SectionTitle>
+      <View style={styles.card}>
+        <View style={billingStyles.stats}>
+          <Stat label="Active machines today" value={formatNumber(thisMonth.activeToday)} />
+          <Stat label="Peak so far" value={formatNumber(thisMonth.peakSoFar)} />
+          {thisMonth.rateCents != null && (
+            <Stat label="Per machine" value={formatCents(thisMonth.rateCents)} />
+          )}
+          {thisMonth.estimateCents != null && (
+            <Stat
+              // Annual plans are prepaid: only machines above the commitment are added monthly.
+              label={
+                plan?.term === 'annual'
+                  ? 'Above your commitment so far, ex GST'
+                  : 'Charge so far, ex GST'
+              }
+              value={formatCents(thisMonth.estimateCents)}
+            />
+          )}
+        </View>
+        <Text variant="caption" color="inkMuted">
+          Invoiced on {formatBillingDay(thisMonth.invoicedOn)}.
+        </Text>
+      </View>
+    </>
+  );
+}
+
+function PaymentMethod({
+  account,
+  onManage,
+}: {
+  account: OrganisationSummary['account'];
+  onManage: () => void;
+}) {
+  return (
+    <>
+      <SectionTitle>Payment method</SectionTitle>
+      <PaymentCard
+        payment={{ processor: 'Stripe' }}
+        onManage={onManage}
+        disabled={account.hasStripeCustomer === false}
+      />
+      <Text variant="caption" color="inkMuted">
+        {account.hasStripeCustomer === false
+          ? 'Payment methods open once your first invoice has been issued.'
+          : 'A card or direct debit saved in Stripe pays new invoices automatically; otherwise ' +
+            'invoices are emailed with 14-day terms.'}
+        {account.billingEmail
+          ? ` Invoices for ${account.name ?? 'your organisation'} go to ${account.billingEmail}.`
+          : ''}
+      </Text>
+    </>
   );
 }

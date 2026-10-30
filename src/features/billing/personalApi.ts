@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useCallback } from 'react';
 import { AppState } from 'react-native';
 
+import { toast } from '@/components/Toast/store';
 import { http } from '@/lib/http';
 import type { BillingAddress } from './address';
-import { openDocument, openStripePage, RETURN_TO_APP } from './stripeBrowser';
+import { openDocument, openStripePage, RETURN_TO_APP, type StripeReturn } from './stripeBrowser';
 import {
   billingKeys,
   paymentResponse,
@@ -13,15 +14,21 @@ import {
   personalStatus,
   urlResponse,
   type InvoiceItem,
+  type PersonalStatus,
 } from './types';
 
 /** A technician's own monthly fee (`/me/billing`). Owners are exempt; org seats are covered. */
+
+// While payment is due, re-read this often (in the foreground only), as the portal does: a
+// payment made on the website, or a webhook arriving late, then shows up without a tap.
+const DUE_POLL_MS = 15_000;
 
 export function usePersonalBilling() {
   return useQuery({
     queryKey: billingKeys.personal,
     // Always re-read on focus: payment can land while the user is in the browser.
     staleTime: 0,
+    refetchInterval: (query) => (query.state.data?.paymentRequired ? DUE_POLL_MS : false),
     queryFn: async () => personalStatus.parse(await http.get('/me/billing')),
   });
 }
@@ -60,10 +67,40 @@ export function usePayNow() {
       const res = paymentResponse.parse(
         await http.post('/me/billing/payment', { ...address, ...RETURN_TO_APP }),
       );
+      let returned: StripeReturn = null;
       try {
-        if (res.paymentUrl) await openStripePage(res.paymentUrl);
+        if (res.paymentUrl) returned = await openStripePage(res.paymentUrl);
       } finally {
         await confirmPayment(client);
+      }
+      if (res.paymentUrl) announce(client, returned);
+    },
+  });
+}
+
+/**
+ * Tells the user how it went once the API has answered. Only the API's status says "received";
+ * Stripe's return link just picks the message while that isn't in yet.
+ */
+function announce(client: QueryClient, returned: StripeReturn) {
+  const status = client.getQueryData<PersonalStatus>(billingKeys.personal);
+  if (status && !status.paymentRequired) toast.success('Payment received. Thank you!');
+  else if (returned === 'cancelled') toast.show('Payment cancelled. You have not been charged.');
+  else if (returned === 'complete')
+    toast.show("We couldn't confirm your payment with Stripe yet. It will update shortly.");
+}
+
+/** Pay on an invoice's Stripe page (one still due), then refresh what it changed. */
+export function usePayInvoice(scope: Scope) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoice: InvoiceItem) => {
+      if (!invoice.payUrl) return;
+      try {
+        await openStripePage(invoice.payUrl);
+      } finally {
+        if (scope === 'personal') await confirmPayment(client);
+        else await client.invalidateQueries({ queryKey: billingKeys.organisation });
       }
     },
   });

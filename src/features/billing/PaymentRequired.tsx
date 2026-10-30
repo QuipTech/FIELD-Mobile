@@ -9,7 +9,8 @@ import { Text } from '@/components/Text/Text';
 import { colors, springs, useReducedMotion } from '@/theme';
 import { AddressForm } from './AddressForm';
 import type { BillingAddress } from './address';
-import { formatBillingMonth, formatCents, formatPeriod } from './format';
+import { formatBillingMonth, formatCents } from './format';
+import { PAYMENT_TERMS, periodLine } from './PersonalSection';
 import { popupStyles as styles } from './popupStyles';
 import type { PersonalStatus } from './types';
 
@@ -65,10 +66,13 @@ export function PaymentRequired(props: PaymentRequiredProps) {
               <Text variant="caption" color="inkMuted">
                 per month · ex GST
               </Text>
-              <Text variant="caption" color="inkMuted">
-                {formatPeriod(status.periodStart, status.periodEnd)}
+              <Text variant="caption" color="inkMuted" style={styles.centered}>
+                {periodLine(status)}
               </Text>
             </View>
+            <Text variant="caption" color="inkMuted" style={styles.centered}>
+              {PAYMENT_TERMS}
+            </Text>
 
             <PayActions {...props} />
 

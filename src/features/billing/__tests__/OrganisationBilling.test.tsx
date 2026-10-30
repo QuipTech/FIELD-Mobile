@@ -55,7 +55,7 @@ describe('Billing — organisation', () => {
 
   it('is hidden from users without billing.manage', async () => {
     await setup();
-    expect(await screen.findByText('Billing is managed by your company admin.')).toBeTruthy();
+    expect(await screen.findByText(/Billing is managed by your company admin\./)).toBeTruthy();
     expect(screen.queryByText('Organisation billing')).toBeNull();
     expect(mockCalls.some((c) => c.path.startsWith('/organisation/billing'))).toBe(false);
   });

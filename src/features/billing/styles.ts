@@ -30,4 +30,12 @@ export const billingStyles = StyleSheet.create({
   stat: { width: '50%', gap: 2 },
   statValue: { fontFamily: fontFamily.medium, fontSize: 17, lineHeight: 22 },
   sheetBody: { gap: spacing.sm },
+  invoiceActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
+  payButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: colors.brand,
+  },
+  terms: { marginTop: spacing.xxs },
 });

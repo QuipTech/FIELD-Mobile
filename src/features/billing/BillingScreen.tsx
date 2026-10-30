@@ -10,7 +10,6 @@ import { useAiUsageReport } from '@/features/assistant/usage';
 import { AllowanceCard, ManagedPlanCard, PaymentCard } from '@/features/me/BillingCards';
 import { useSubscription } from '@/features/me/api';
 import { styles } from '@/features/me/styles';
-import { errorMessage } from '@/lib/http';
 import { InvoiceList } from './InvoiceList';
 import { OrganisationSection, SectionTitle } from './OrganisationSection';
 import { useOrganisationBilling, useOrganisationInvoices, usePlanChanges } from './organisationApi';
@@ -18,16 +17,17 @@ import {
   useBillingPortal,
   useConfirmOnForeground,
   useOpenInvoicePdf,
+  usePayInvoice,
   usePayNow,
   usePersonalBilling,
   usePersonalInvoices,
 } from './personalApi';
 import { PersonalSection } from './PersonalSection';
 import { AnnualSheet, CancelSheet } from './PlanSheets';
-import { personalCheckoutMode, WEB_BILLING_URL } from './stripeBrowser';
+import { billingErrorMessage, personalCheckoutMode, WEB_BILLING_URL } from './stripeBrowser';
 
 const NONE = { used: 0, limit: 0 };
-const onError = (e: unknown) => toast.error(errorMessage(e));
+const onError = (e: unknown) => toast.error(billingErrorMessage(e));
 
 /** Settings → Billing: the user's own fee, their AI usage, and (billing admins) the organisation. */
 export function BillingScreen() {
@@ -38,7 +38,9 @@ export function BillingScreen() {
   const invoices = usePersonalInvoices(paysPersonally);
   const payNow = usePayNow();
   const openPdf = useOpenInvoicePdf('personal');
+  const payInvoice = usePayInvoice('personal');
   const portal = useBillingPortal('personal');
+  const checkout = personalCheckoutMode();
   const usage = useAiUsageReport(capabilities.canUseAi);
   useConfirmOnForeground(!!personal.data?.paymentRequired);
 
@@ -49,10 +51,10 @@ export function BillingScreen() {
         {(status) => (
           <PersonalSection
             status={status}
-            checkout={personalCheckoutMode()}
+            checkout={checkout}
             webBillingUrl={WEB_BILLING_URL}
             paying={payNow.isPending}
-            payError={payNow.error ? errorMessage(payNow.error) : undefined}
+            payError={payNow.error ? billingErrorMessage(payNow.error) : undefined}
             onPay={(address) => payNow.mutate(address)}
           />
         )}
@@ -64,6 +66,12 @@ export function BillingScreen() {
           <InvoiceList
             invoices={invoices.data ?? []}
             onOpen={(invoice) => openPdf.mutate(invoice, { onError })}
+            // Where personal payments are taken on the web portal, so are invoice payments.
+            onPay={
+              checkout === 'in-app'
+                ? (invoice) => payInvoice.mutate(invoice, { onError })
+                : undefined
+            }
           />
           {!!invoices.data?.length && (
             <PaymentCard
@@ -103,6 +111,7 @@ function OrganisationBilling() {
   const invoices = useOrganisationInvoices(true);
   const changes = usePlanChanges();
   const openPdf = useOpenInvoicePdf('organisation');
+  const payInvoice = usePayInvoice('organisation');
   const portal = useBillingPortal('organisation');
   const [sheet, setSheet] = useState<'annual' | 'cancel' | null>(null);
   const close = () => setSheet(null);
@@ -124,6 +133,7 @@ function OrganisationBilling() {
               onKeep={() => changes.keep.mutate(undefined, { onError })}
               onManagePayment={() => portal.mutate(undefined, { onError })}
               onOpenInvoice={(invoice) => openPdf.mutate(invoice, { onError })}
+              onPayInvoice={(invoice) => payInvoice.mutate(invoice, { onError })}
             />
             {data.plan && (
               <>

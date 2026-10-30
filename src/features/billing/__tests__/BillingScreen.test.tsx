@@ -89,7 +89,8 @@ describe('Billing — personal', () => {
     mockApi['GET /me/billing'] = DUE;
     await setup();
     expect(await screen.findByText('A$29.00')).toBeTruthy();
-    expect(screen.getByText('1 Oct 2026 – 31 Oct 2026')).toBeTruthy();
+    expect(screen.getByText(/1 Oct 2026 – 31 Oct 2026 · Australia\/Perth/)).toBeTruthy();
+    expect(screen.getByText(/nothing is charged automatically/)).toBeTruthy();
   });
 
   it('shows paid after the browser is closed before Stripe redirects', async () => {

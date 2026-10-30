@@ -6,16 +6,22 @@ import { BackHandler } from 'react-native';
 import { signOutUser } from '@/auth/flows';
 import { runAuth } from '@/auth/runAuth';
 import { PaymentRequired } from '@/features/billing/PaymentRequired';
+import { StatusUnavailable } from '@/features/billing/StatusUnavailable';
+import { isBlockingStatusError } from '@/features/billing/usePaymentGate';
 import {
   confirmPayment,
   useConfirmOnForeground,
   usePayNow,
   usePersonalBilling,
 } from '@/features/billing/personalApi';
-import { personalCheckoutMode, WEB_BILLING_URL } from '@/features/billing/stripeBrowser';
+import {
+  billingErrorMessage,
+  personalCheckoutMode,
+  WEB_BILLING_URL,
+} from '@/features/billing/stripeBrowser';
 import { errorMessage } from '@/lib/http';
 
-/** The Payment required popup, opened by Home while the user's own fee is unpaid (usePaymentGate). */
+/** The Payment required popup, opened by Home while the user's fee is unpaid or unknown (usePaymentGate). */
 export default function PaymentRequiredRoute() {
   const personal = usePersonalBilling();
   const payNow = usePayNow();
@@ -25,7 +31,10 @@ export default function PaymentRequiredRoute() {
     setChecking(true);
     confirmPayment(client).finally(() => setChecking(false));
   };
-  const paid = !!personal.data && !personal.data.paymentRequired;
+  const { data, error } = personal;
+  // Closes once the API says the month is paid, or if the status can't be read for a reason that
+  // shouldn't block (offline: see isBlockingStatusError).
+  const paid = data ? !data.paymentRequired : !!error && !isBlockingStatusError(error);
   useConfirmOnForeground(!paid);
 
   useFocusEffect(
@@ -40,18 +49,29 @@ export default function PaymentRequiredRoute() {
     }, [paid]),
   );
 
-  if (!personal.data) return null;
+  const signOut = () => runAuth(signOutUser);
+  if (!data) {
+    if (!isBlockingStatusError(error)) return null;
+    return (
+      <StatusUnavailable
+        message={errorMessage(error)}
+        retrying={personal.isFetching}
+        onRetry={() => personal.refetch()}
+        onSignOut={signOut}
+      />
+    );
+  }
   return (
     <PaymentRequired
-      status={personal.data}
+      status={data}
       checkout={personalCheckoutMode()}
       webBillingUrl={WEB_BILLING_URL}
       paying={payNow.isPending}
-      payError={payNow.error ? errorMessage(payNow.error) : undefined}
+      payError={payNow.error ? billingErrorMessage(payNow.error) : undefined}
       onPay={(address) => payNow.mutate(address)}
       checking={checking}
       onCheckAgain={checkAgain}
-      onSignOut={() => runAuth(signOutUser)}
+      onSignOut={signOut}
     />
   );
 }

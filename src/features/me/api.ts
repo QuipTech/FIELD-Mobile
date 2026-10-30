@@ -24,6 +24,8 @@ const subscription = z
     planName: z.string().nullish(),
     planCode: z.string().nullish(),
     status: z.string().nullish(),
+    endsOn: z.string().nullish(),
+    renewsAutomatically: z.boolean().nullish(),
     currentPeriodEnd: z.string().nullish(),
     endDate: z.string().nullish(),
     endsAt: z.string().nullish(),
@@ -36,6 +38,8 @@ const subscription = z
 const PLAN_NAMES: Record<string, string> = { ASSET_PRO: 'Asset Pro', ENTERPRISE: 'Enterprise' };
 
 function planStatus(status: string | null | undefined): PlanStatus {
+  if (status === 'free') return 'free';
+  if (status === 'expiring_soon') return 'expiringSoon';
   if (status === 'past_due' || status === 'unpaid' || status === 'pastDue') return 'pastDue';
   if (status === 'canceled' || status === 'cancelled' || status === 'expired') return 'cancelled';
   return 'active';
@@ -48,7 +52,8 @@ export function toPlan(raw: unknown): Plan {
   return {
     name: PLAN_NAMES[code] ?? (code || 'No plan'),
     status: planStatus(s.status),
-    renewsOn: s.currentPeriodEnd || s.endDate || s.endsAt || '',
+    renewsOn: s.endsOn || s.currentPeriodEnd || s.endDate || s.endsAt || '',
+    renewsAutomatically: s.renewsAutomatically ?? true,
     cadence: /year|annual/i.test(interval) ? 'annual' : 'monthly',
     assets: s.assetCount ?? 0,
   };

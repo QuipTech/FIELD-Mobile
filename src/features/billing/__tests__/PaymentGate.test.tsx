@@ -3,9 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ApiError, NetworkError } from '@/lib/http';
 import { billingApi, billingCalls, resetBillingApi } from '@/test/fakeBillingHttp';
 import { DUE, PAID } from '@/test/fixtures/billing';
 import { PaymentRequired } from '../PaymentRequired';
+import { StatusUnavailable } from '../StatusUnavailable';
 import { usePaymentGate } from '../usePaymentGate';
 
 jest.mock('@/lib/http', () => ({
@@ -69,6 +71,26 @@ describe('payment gate on Home', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
+  it('blocks when the API answers with a server error', async () => {
+    billingApi['GET /me/billing'] = () => {
+      throw new ApiError(503, 'Service unavailable');
+    };
+    await renderWithClient(<Gate />);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/payment-required'));
+  });
+
+  it('never blocks when the device is offline', async () => {
+    billingApi['GET /me/billing'] = () => {
+      throw new NetworkError('Network request failed');
+    };
+    await renderWithClient(<Gate />);
+    await waitFor(() =>
+      expect(billingCalls).toContainEqual({ method: 'GET', path: '/me/billing' }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('waits while the first-run guide is showing', async () => {
     billingApi['GET /me/billing'] = DUE;
     await renderWithClient(<Gate enabled={false} />);
@@ -103,5 +125,25 @@ describe('Payment required popup', () => {
     expect(screen.queryByRole('button', { name: 'Pay now' })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: "I've paid, check again" }));
     expect(props.onCheckAgain).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Subscription status unavailable popup', () => {
+  it('offers Try again and Sign out', async () => {
+    const onRetry = jest.fn();
+    const onSignOut = jest.fn();
+    await renderWithClient(
+      <StatusUnavailable
+        message="Something went wrong on our side. Try again."
+        retrying={false}
+        onRetry={onRetry}
+        onSignOut={onSignOut}
+      />,
+    );
+    expect(screen.getByText('Subscription status unavailable')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 });

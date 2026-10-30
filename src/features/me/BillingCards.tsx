@@ -7,14 +7,14 @@ import { Text } from '@/components/Text/Text';
 import { formatNumber } from '@/lib/format';
 import { colors } from '@/theme';
 import type { Plan } from './data';
-import { PLAN_STATUS } from './status';
+import { PLAN_STATUS, planWhen } from './status';
 import { styles } from './styles';
 
 type Allowance = { used: number; limit: number };
 /** Card details live in Stripe; the API only links to its portal. */
 type Payment = { brand?: string; last4?: string; processor: string };
 
-/** What a technician sees: the plan is active, and someone else pays for it. */
+/** What a technician sees: the organisation's plan, which someone else pays for. */
 export function ManagedPlanCard({ plan }: { plan: Plan }) {
   const status = PLAN_STATUS[plan.status];
   return (
@@ -26,7 +26,9 @@ export function ManagedPlanCard({ plan }: { plan: Plan }) {
         <Pill label={status.label} tone={status.tone} />
       </View>
       <Text variant="caption" color="inkMuted">
-        Billing is managed by your company admin.
+        {plan.status === 'free'
+          ? 'Your organisation is on the free plan. Your admin manages its billing.'
+          : `${planWhen(plan)}. Billing is managed by your company admin.`}
       </Text>
     </View>
   );
@@ -68,7 +70,16 @@ export function AllowanceCard({
   );
 }
 
-export function PaymentCard({ payment, onManage }: { payment: Payment; onManage: () => void }) {
+export function PaymentCard({
+  payment,
+  onManage,
+  disabled,
+}: {
+  payment: Payment;
+  onManage: () => void;
+  /** E.g. before Stripe knows the customer, when the portal can't open yet. */
+  disabled?: boolean;
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardRow}>
@@ -97,6 +108,7 @@ export function PaymentCard({ payment, onManage }: { payment: Payment; onManage:
           variant="outline"
           label="Manage"
           onPress={onManage}
+          disabled={disabled}
           style={styles.compactButton}
         />
       </View>
