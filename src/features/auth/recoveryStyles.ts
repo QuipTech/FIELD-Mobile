@@ -20,6 +20,7 @@ export const styles = StyleSheet.create({
   centered: { textAlign: 'center' },
   spacer: { flex: 1, minHeight: spacing.xl },
   form: { gap: spacing.md, paddingBottom: 28 },
+  formTop: { marginTop: spacing.xl },
   linkRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 4 },
   link: { minHeight: layout.minTapTarget, justifyContent: 'center' },
 

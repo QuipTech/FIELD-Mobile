@@ -12,12 +12,23 @@ export type AuthStepLayoutProps = {
   icon: LucideIcon;
   title: string;
   subtitle: string;
-  /** Form controls, pinned to the bottom so they sit just above the keyboard. */
+  /** Form controls: pinned to the bottom (just above the keyboard) or right under the heading. */
   children: ReactNode;
+  /**
+   * 'top' keeps the form under the heading, in view while the keyboard is open (the code entry
+   * screen: Android draws edge to edge, so a bottom-pinned form can end up under the keyboard).
+   */
+  formPosition?: 'top' | 'bottom';
 };
 
-/** M1c–M1e shell: icon tile, title and subtitle up top; the form at the bottom. */
-export function AuthStepLayout({ icon: Icon, title, subtitle, children }: AuthStepLayoutProps) {
+/** M1c–M1e shell: icon tile, title and subtitle up top; the form at the bottom (or under them). */
+export function AuthStepLayout({
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+  formPosition = 'bottom',
+}: AuthStepLayoutProps) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
@@ -45,8 +56,8 @@ export function AuthStepLayout({ icon: Icon, title, subtitle, children }: AuthSt
             </Text>
           </View>
         </View>
-        <View style={styles.spacer} />
-        <View style={styles.form}>{children}</View>
+        {formPosition === 'bottom' && <View style={styles.spacer} />}
+        <View style={[styles.form, formPosition === 'top' && styles.formTop]}>{children}</View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

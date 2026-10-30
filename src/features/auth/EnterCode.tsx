@@ -44,7 +44,13 @@ export function EnterCode({ destination, onSubmit, onResend }: EnterCodeProps) {
   };
 
   return (
-    <AuthStepLayout icon={ShieldCheck} title="Enter the code" subtitle={`Sent to ${destination}`}>
+    <AuthStepLayout
+      icon={ShieldCheck}
+      title="Enter the code"
+      subtitle={`Sent to ${destination}`}
+      // The code boxes stay under the heading, so the keyboard never covers them.
+      formPosition="top"
+    >
       <CodeInput
         value={code}
         onChange={(next) => {
