@@ -1,11 +1,13 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { BackHandler } from 'react-native';
 
 import { signOutUser } from '@/auth/flows';
 import { runAuth } from '@/auth/runAuth';
 import { PaymentRequired } from '@/features/billing/PaymentRequired';
 import {
+  confirmPayment,
   useConfirmOnForeground,
   usePayNow,
   usePersonalBilling,
@@ -13,10 +15,16 @@ import {
 import { personalCheckoutMode, WEB_BILLING_URL } from '@/features/billing/stripeBrowser';
 import { errorMessage } from '@/lib/http';
 
-/** Opened by Home while the user's own fee is unpaid (see usePaymentGate). */
+/** The Payment required popup, opened by Home while the user's own fee is unpaid (usePaymentGate). */
 export default function PaymentRequiredRoute() {
   const personal = usePersonalBilling();
   const payNow = usePayNow();
+  const client = useQueryClient();
+  const [checking, setChecking] = useState(false);
+  const checkAgain = () => {
+    setChecking(true);
+    confirmPayment(client).finally(() => setChecking(false));
+  };
   const paid = !!personal.data && !personal.data.paymentRequired;
   useConfirmOnForeground(!paid);
 
@@ -41,6 +49,8 @@ export default function PaymentRequiredRoute() {
       paying={payNow.isPending}
       payError={payNow.error ? errorMessage(payNow.error) : undefined}
       onPay={(address) => payNow.mutate(address)}
+      checking={checking}
+      onCheckAgain={checkAgain}
       onSignOut={() => runAuth(signOutUser)}
     />
   );

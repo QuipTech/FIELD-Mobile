@@ -29,6 +29,4 @@ export const billingStyles = StyleSheet.create({
   stat: { width: '50%', gap: 2 },
   statValue: { fontFamily: fontFamily.medium, fontSize: 17, lineHeight: 22 },
   sheetBody: { gap: spacing.sm },
-  gate: { flex: 1, backgroundColor: colors.canvas },
-  gateIntro: { gap: spacing.xs, marginTop: spacing.md },
 });

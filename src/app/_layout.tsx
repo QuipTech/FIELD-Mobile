@@ -52,11 +52,13 @@ const CAMERA_SCREEN = {
   animation: 'slide_from_bottom',
 } as const;
 const BARE = { headerShown: false } as const;
-/** Covers the app until the user's own fee is paid: no header, no swipe to dismiss. */
+/** A popup over the app until the user's own fee is paid: no header, no swipe to dismiss. */
 const PAYMENT_GATE = {
   headerShown: false,
-  presentation: 'fullScreenModal',
+  presentation: 'transparentModal',
+  animation: 'fade',
   gestureEnabled: false,
+  contentStyle: { backgroundColor: 'transparent' },
 } as const;
 const FADE = { headerShown: false, animation: 'fade' } as const;
 

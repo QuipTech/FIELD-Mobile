@@ -76,24 +76,32 @@ describe('payment gate on Home', () => {
   });
 });
 
-describe('Payment required screen', () => {
+describe('Payment required popup', () => {
+  const props = {
+    status: DUE,
+    webBillingUrl: 'https://web.test/settings/billing',
+    paying: false,
+    checking: false,
+    onPay: jest.fn(),
+    onCheckAgain: jest.fn(),
+    onSignOut: jest.fn(),
+  };
+
   it('shows the fee and lets the user pay or sign out', async () => {
-    const onPay = jest.fn();
-    const onSignOut = jest.fn();
-    await renderWithClient(
-      <PaymentRequired
-        status={DUE}
-        checkout="in-app"
-        webBillingUrl="https://web.test/settings/billing"
-        paying={false}
-        onPay={onPay}
-        onSignOut={onSignOut}
-      />,
-    );
-    expect(screen.getByText('Payment required')).toBeTruthy();
-    expect(screen.getByText(/needs this month's fee of A\$29\.00 \(ex GST\)/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay now' })).toBeTruthy();
+    await renderWithClient(<PaymentRequired {...props} checkout="in-app" />);
+    expect(screen.getByText('Your subscription is due')).toBeTruthy();
+    expect(screen.getByText('Due · October 2026')).toBeTruthy();
+    expect(screen.getByText('A$29.00')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Pay now' }));
+    expect(screen.getByLabelText('Street address')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
-    expect(onSignOut).toHaveBeenCalledTimes(1);
+    expect(props.onSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks the API again after paying on the web portal', async () => {
+    await renderWithClient(<PaymentRequired {...props} checkout="web" />);
+    expect(screen.queryByRole('button', { name: 'Pay now' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: "I've paid, check again" }));
+    expect(props.onCheckAgain).toHaveBeenCalledTimes(1);
   });
 });
