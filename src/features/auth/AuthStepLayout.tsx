@@ -15,8 +15,8 @@ export type AuthStepLayoutProps = {
   /** Form controls: pinned to the bottom (just above the keyboard) or right under the heading. */
   children: ReactNode;
   /**
-   * 'top' keeps the form under the heading, in view while the keyboard is open (the code entry
-   * screen: Android draws edge to edge, so a bottom-pinned form can end up under the keyboard).
+   * 'top' keeps the form under the heading, in view while the keyboard is open (the screens with
+   * text fields: Android draws edge to edge, so a bottom-pinned form can end up under it).
    */
   formPosition?: 'top' | 'bottom';
 };

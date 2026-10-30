@@ -30,6 +30,8 @@ export function ForgotPassword({
       icon={Lock}
       title="Reset your password"
       subtitle={`Enter your work email and we'll send you a ${CODE_LENGTH}-digit code`}
+      // The email field stays under the heading, so the keyboard never covers it.
+      formPosition="top"
     >
       <FormField
         control={control}

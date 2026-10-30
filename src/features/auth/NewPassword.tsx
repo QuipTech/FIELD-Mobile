@@ -20,7 +20,13 @@ export function NewPassword({ onSubmit }: NewPasswordProps) {
   const submit = handleSubmit(onSubmit);
 
   return (
-    <AuthStepLayout icon={Check} title="Set a new password" subtitle={PASSWORD_RULE}>
+    <AuthStepLayout
+      icon={Check}
+      title="Set a new password"
+      subtitle={PASSWORD_RULE}
+      // The password fields stay under the heading, so the keyboard never covers them.
+      formPosition="top"
+    >
       <PasswordField
         control={control}
         name="password"
