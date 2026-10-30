@@ -24,8 +24,9 @@ export function NewPassword({ onSubmit }: NewPasswordProps) {
       icon={Check}
       title="Set a new password"
       subtitle={PASSWORD_RULE}
-      // The password fields stay under the heading, so the keyboard never covers them.
-      formPosition="top"
+      footer={
+        <BrandButton label="Update password" onPress={submit} loading={formState.isSubmitting} />
+      }
     >
       <PasswordField
         control={control}
@@ -46,7 +47,6 @@ export function NewPassword({ onSubmit }: NewPasswordProps) {
         returnKeyType="done"
         onSubmitEditing={submit}
       />
-      <BrandButton label="Update password" onPress={submit} loading={formState.isSubmitting} />
     </AuthStepLayout>
   );
 }

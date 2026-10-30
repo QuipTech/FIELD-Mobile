@@ -30,8 +30,12 @@ export function ForgotPassword({
       icon={Lock}
       title="Reset your password"
       subtitle={`Enter your work email and we'll send you a ${CODE_LENGTH}-digit code`}
-      // The email field stays under the heading, so the keyboard never covers it.
-      formPosition="top"
+      footer={
+        <>
+          <BrandButton label="Send reset code" onPress={submit} loading={formState.isSubmitting} />
+          <InlineLink label="Back to sign in" onPress={onBackToSignIn} />
+        </>
+      }
     >
       <FormField
         control={control}
@@ -45,8 +49,6 @@ export function ForgotPassword({
         returnKeyType="send"
         onSubmitEditing={submit}
       />
-      <BrandButton label="Send reset code" onPress={submit} loading={formState.isSubmitting} />
-      <InlineLink label="Back to sign in" onPress={onBackToSignIn} />
     </AuthStepLayout>
   );
 }

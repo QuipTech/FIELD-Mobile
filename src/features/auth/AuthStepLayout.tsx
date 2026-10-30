@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react-native';
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Text/Text';
@@ -12,34 +12,51 @@ export type AuthStepLayoutProps = {
   icon: LucideIcon;
   title: string;
   subtitle: string;
-  /** Form controls: pinned to the bottom (just above the keyboard) or right under the heading. */
+  /** Form controls: right under the heading when there's a footer, else pinned to the bottom. */
   children: ReactNode;
   /**
-   * 'top' keeps the form under the heading, in view while the keyboard is open (the screens with
-   * text fields: Android draws edge to edge, so a bottom-pinned form can end up under it).
+   * The main action, pinned to the bottom of the screen; it rides up above the keyboard while
+   * the fields above stay in view under the heading.
    */
-  formPosition?: 'top' | 'bottom';
+  footer?: ReactNode;
 };
 
-/** M1c–M1e shell: icon tile, title and subtitle up top; the form at the bottom (or under them). */
+// iOS announces the keyboard before it moves; Android only once it has.
+const SHOW = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+const HIDE = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(SHOW, () => setOpen(true));
+    const hide = Keyboard.addListener(HIDE, () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
+}
+
+/** M1c–M1e shell: icon tile, title and subtitle up top; then the form, and its footer. */
 export function AuthStepLayout({
   icon: Icon,
   title,
   subtitle,
   children,
-  formPosition = 'bottom',
+  footer,
 }: AuthStepLayoutProps) {
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    // 'padding' on Android too: the app draws edge to edge, so the window doesn't shrink for the
+    // keyboard (adjustResize has no effect) and this view has to make room itself.
+    <KeyboardAvoidingView style={styles.root} behavior="padding">
       <Decorations placement="step" />
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
+          { paddingTop: insets.top, paddingBottom: footer ? 0 : insets.bottom },
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -56,9 +73,15 @@ export function AuthStepLayout({
             </Text>
           </View>
         </View>
-        {formPosition === 'bottom' && <View style={styles.spacer} />}
-        <View style={[styles.form, formPosition === 'top' && styles.formTop]}>{children}</View>
+        {!footer && <View style={styles.spacer} />}
+        <View style={[styles.form, !!footer && styles.formTop]}>{children}</View>
       </ScrollView>
+      {footer && (
+        // Above the home indicator, or just above the keyboard while it's open.
+        <View style={[styles.footer, { paddingBottom: (keyboardOpen ? 0 : insets.bottom) + 16 }]}>
+          {footer}
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }

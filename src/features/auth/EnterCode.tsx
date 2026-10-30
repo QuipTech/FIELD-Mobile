@@ -48,8 +48,14 @@ export function EnterCode({ destination, onSubmit, onResend }: EnterCodeProps) {
       icon={ShieldCheck}
       title="Enter the code"
       subtitle={`Sent to ${destination}`}
-      // The code boxes stay under the heading, so the keyboard never covers them.
-      formPosition="top"
+      footer={
+        <BrandButton
+          label="Verify code"
+          onPress={() => verify()}
+          loading={busy === 'verify'}
+          disabled={busy === 'resend'}
+        />
+      }
     >
       <CodeInput
         value={code}
@@ -61,12 +67,6 @@ export function EnterCode({ destination, onSubmit, onResend }: EnterCodeProps) {
         error={error}
       />
       <InlineLink prefix="Didn't get it?" label="Resend code" onPress={resend} disabled={!!busy} />
-      <BrandButton
-        label="Verify code"
-        onPress={() => verify()}
-        loading={busy === 'verify'}
-        disabled={busy === 'resend'}
-      />
     </AuthStepLayout>
   );
 }

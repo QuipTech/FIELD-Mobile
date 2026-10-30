@@ -21,6 +21,7 @@ export const styles = StyleSheet.create({
   spacer: { flex: 1, minHeight: spacing.xl },
   form: { gap: spacing.md, paddingBottom: 28 },
   formTop: { marginTop: spacing.xl },
+  footer: { paddingHorizontal: 28, paddingTop: spacing.sm, gap: spacing.md },
   linkRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 4 },
   link: { minHeight: layout.minTapTarget, justifyContent: 'center' },
 
