@@ -6,8 +6,9 @@ import { colors, fontFamily, spacing } from '@/theme';
 export const billingStyles = StyleSheet.create({
   price: { fontFamily: fontFamily.medium, fontSize: 24, lineHeight: 30 },
   form: { gap: spacing.sm, marginTop: spacing.xxs },
-  formRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
-  formCell: { flex: 1, gap: 6 },
+  formCell: { gap: 6 },
+  stateChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  postcode: { width: 140 },
   actions: { gap: spacing.xs, marginTop: spacing.xxs },
   notice: {
     borderRadius: 12,

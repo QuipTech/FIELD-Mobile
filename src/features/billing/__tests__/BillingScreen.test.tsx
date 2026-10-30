@@ -53,8 +53,7 @@ async function enterAddress() {
   await fireEvent.press(await screen.findByRole('button', { name: 'Pay now' }));
   await fireEvent.changeText(screen.getByLabelText('Street address'), '1 Pit Rd');
   await fireEvent.changeText(screen.getByLabelText('Suburb or city'), 'Kalgoorlie');
-  await fireEvent.press(screen.getByRole('button', { name: 'Choose' }));
-  await fireEvent.press(screen.getByLabelText('WA'));
+  await fireEvent.press(screen.getByRole('togglebutton', { name: 'WA' }));
   await fireEvent.changeText(screen.getByLabelText('Postcode'), '6430');
   await fireEvent.press(screen.getByRole('button', { name: 'Continue to payment' }));
 }
