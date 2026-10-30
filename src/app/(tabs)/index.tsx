@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 
 import { initials, useCurrentUser } from '@/auth/useCurrentUser';
 import { useRole } from '@/auth/useRole';
+import { usePaymentGate } from '@/features/billing/usePaymentGate';
 import { useCases } from '@/features/cases/api';
 import { useAdminHomeData, type AdminKpiKey } from '@/features/home/adminData';
 import { greeting, useHomeData } from '@/features/home/data';
@@ -29,6 +30,8 @@ export default function HomeRoute() {
   const cases = useCases();
   const guide = usePortalGuide(user?.id);
   const unread = useUnreadNotifications();
+  // An unpaid personal fee blocks the app (after the first-run guide, so they don't stack).
+  usePaymentGate(!guide.visible);
 
   return (
     <>

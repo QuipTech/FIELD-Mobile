@@ -52,6 +52,12 @@ const CAMERA_SCREEN = {
   animation: 'slide_from_bottom',
 } as const;
 const BARE = { headerShown: false } as const;
+/** Covers the app until the user's own fee is paid: no header, no swipe to dismiss. */
+const PAYMENT_GATE = {
+  headerShown: false,
+  presentation: 'fullScreenModal',
+  gestureEnabled: false,
+} as const;
 const FADE = { headerShown: false, animation: 'fade' } as const;
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -121,6 +127,7 @@ function RootStack() {
             <Stack.Screen name="capture" options={CAMERA_SCREEN} />
             <Stack.Screen name="capture-photo" options={CAMERA_SCREEN} />
             <Stack.Screen name="knowledge/search" options={FADE} />
+            <Stack.Screen name="payment-required" options={PAYMENT_GATE} />
           </Stack.Protected>
           <Stack.Protected guard={status === 'profileRequired'}>
             <Stack.Screen name="complete-profile" options={BARE} />
