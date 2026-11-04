@@ -1,6 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { refreshAccess, useAccess } from '@/auth/access';
+import { getApiSession, updateApiUser } from '@/auth/apiSession';
+import type { CurrentUser } from '@/auth/useCurrentUser';
+import { queryClient } from '@/lib/queryClient';
 import { http } from '@/lib/http';
 import type { Plan, PlanStatus } from './data';
 
@@ -94,6 +98,22 @@ export type ProfilePatch = Partial<{
 export function useUpdateProfile(onSaved?: () => void) {
   return useMutation({
     mutationFn: (patch: ProfilePatch) => http.patch('/users/me', patch),
-    onSuccess: onSaved,
+    onSuccess: async (_, patch) => {
+      // Keep the displayed name current even when Cognito still has the sign-up name.
+      const names = {
+        ...(patch.firstName !== undefined ? { firstName: patch.firstName } : {}),
+        ...(patch.lastName !== undefined ? { lastName: patch.lastName } : {}),
+      };
+      queryClient.setQueryData<CurrentUser>(['currentUser'], (user) =>
+        user ? { ...user, ...names } : user,
+      );
+      useAccess.setState((state) => ({
+        profile: state.profile ? { ...state.profile, ...patch } : null,
+      }));
+      const session = await getApiSession();
+      if (session) await updateApiUser({ ...session.user, ...names });
+      await refreshAccess();
+      onSaved?.();
+    },
   });
 }

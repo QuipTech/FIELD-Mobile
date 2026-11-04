@@ -118,3 +118,13 @@ export const dark: ThemeColors = {
 
 export const palettes = { light, dark } as const;
 export type ColorScheme = keyof typeof palettes;
+
+/** Decorative accents for splash and onboarding artwork. */
+export const decorativeColors = {
+  violet: '#A78BFA',
+  teal: '#2DD4BF',
+  amber: '#FBBF24',
+  pink: '#F472B6',
+  blue: '#60A5FA',
+  coral: '#FB7185',
+} as const;

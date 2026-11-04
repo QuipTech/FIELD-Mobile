@@ -16,8 +16,7 @@ import { styles } from './styles';
 export type HomeProps = QuickActionsProps & {
   title: string;
   initials: string;
-  /** Plan badge beside the bell. */
-  plan?: string;
+  avatarUrl?: string | null;
   /** Admins get fleet KPIs and team activity instead of their own machines. */
   isAdmin?: boolean;
   /** Admin-only data; ignored for customers. */
@@ -59,7 +58,7 @@ export function Home({ data, error, onRetry, bottomInset, isAdmin, admin, ...pro
         title={props.title}
         subtitle={data ? machinesLine(data) : ' '}
         initials={props.initials}
-        plan={props.plan}
+        avatarUrl={props.avatarUrl}
         onNotifications={props.onNotifications}
         unread={props.unreadNotifications}
         onProfile={props.onProfile}

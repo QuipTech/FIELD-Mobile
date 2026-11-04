@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 
+import { useAccess } from './access';
 import { getApiSession } from './apiSession';
 
 export type CurrentUser = {
@@ -9,6 +10,7 @@ export type CurrentUser = {
   email: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string | null;
 };
 
 async function loadCurrentUser(): Promise<CurrentUser> {
@@ -16,12 +18,15 @@ async function loadCurrentUser(): Promise<CurrentUser> {
   if (!cognito) return apiUser(); // biometric sign-in: no Cognito session, only the API's
   const [{ userId }, attrs] = cognito;
   const email = attrs.email ?? '';
+  const saved = (await getApiSession())?.user;
+  const api = saved?.email === email ? saved : undefined;
   return {
     id: userId,
     email,
     // Google/Apple accounts may lack a name; fall back to the email's local part.
-    firstName: attrs.given_name || email.split('@')[0] || '',
-    lastName: attrs.family_name ?? '',
+    firstName: api?.firstName ?? (attrs.given_name || email.split('@')[0] || ''),
+    avatarUrl: api?.avatarUrl,
+    lastName: api?.lastName ?? attrs.family_name ?? '',
   };
 }
 
@@ -34,12 +39,30 @@ async function apiUser(): Promise<CurrentUser> {
     email: user.email,
     firstName: user.firstName || user.email.split('@')[0] || '',
     lastName: user.lastName ?? '',
+    avatarUrl: user.avatarUrl,
   };
 }
 
 /** The signed-in user's profile (cached for the session). */
 export function useCurrentUser() {
-  return useQuery({ queryKey: ['currentUser'], queryFn: loadCurrentUser, staleTime: Infinity });
+  const profile = useAccess((s) => s.profile);
+  const query = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: loadCurrentUser,
+    staleTime: Infinity,
+  });
+  return {
+    ...query,
+    data:
+      query.data && profile
+        ? {
+            ...query.data,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            avatarUrl: profile.avatarUrl,
+          }
+        : query.data,
+  };
 }
 
 export const initials = (user: Pick<CurrentUser, 'firstName' | 'lastName' | 'email'>) =>

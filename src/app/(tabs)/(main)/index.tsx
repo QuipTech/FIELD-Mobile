@@ -9,7 +9,6 @@ import { greeting, useHomeData } from '@/features/home/data';
 import { usePortalGuide } from '@/features/home/guideStorage';
 import { Home } from '@/features/home/Home';
 import { PortalGuide } from '@/features/home/PortalGuide';
-import { useSubscription } from '@/features/me/api';
 import { useUnreadNotifications } from '@/features/notifications/api';
 
 const OPEN_CASES_ON_HOME = 2;
@@ -26,7 +25,6 @@ export default function HomeRoute() {
   const { isAdmin } = useRole();
   const dashboard = useHomeData();
   const admin = useAdminHomeData(isAdmin, dashboard.data?.recent);
-  const plan = useSubscription();
   const cases = useCases();
   const guide = usePortalGuide(user?.id);
   const unread = useUnreadNotifications();
@@ -37,8 +35,8 @@ export default function HomeRoute() {
     <>
       <Home
         title={user ? `${greeting()}, ${user.firstName}` : greeting()}
+        avatarUrl={user?.avatarUrl}
         initials={user ? initials(user) : ''}
-        plan={plan.data?.name}
         isAdmin={isAdmin}
         admin={admin.data}
         openCases={(cases.data ?? [])

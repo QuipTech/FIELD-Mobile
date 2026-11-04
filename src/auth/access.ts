@@ -55,6 +55,13 @@ export function refreshAccess(): Promise<void> {
       if (session)
         await updateApiUser({
           ...session.user,
+          ...(me.profile
+            ? {
+                firstName: me.profile.firstName,
+                lastName: me.profile.lastName,
+                avatarUrl: me.profile.avatarUrl,
+              }
+            : {}),
           roles: me.roles,
           permissions: me.permissions,
         });

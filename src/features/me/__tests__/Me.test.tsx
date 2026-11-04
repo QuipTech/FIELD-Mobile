@@ -33,6 +33,12 @@ const setup = async (data: Partial<MeData> = {}, isAdmin = false, extra: Partial
 };
 
 describe('Me', () => {
+  it.each([false, true])('offers profile editing for admin=%s', async (admin) => {
+    const props = await setup({}, admin);
+    await fireEvent.press(screen.getByRole('button', { name: 'Edit profile' }));
+    expect(props.onNavigate).toHaveBeenCalledWith('editProfile');
+  });
+
   it('toggles Face ID sign-in under Security when the device supports it', async () => {
     const onToggle = jest.fn();
     await setup({}, false, {

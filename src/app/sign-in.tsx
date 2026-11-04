@@ -33,7 +33,7 @@ const FALLBACK: BiometricSupport =
 function biometricBlocker(support: BiometricSupport | null, savedEmail: string | null) {
   if (!support) {
     return Platform.OS === 'ios'
-      ? 'Set up Face ID in your iPhone Settings (Face ID & Passcode) first.'
+      ? 'Face ID is not Set Up'
       : 'Add a fingerprint in your phone’s Settings (Security) first.';
   }
   if (!savedEmail) {

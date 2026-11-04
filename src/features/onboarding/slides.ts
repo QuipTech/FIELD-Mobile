@@ -8,9 +8,9 @@ export type Slide = {
 };
 
 const scan = require('../../../assets/onboarding/scan.jpg');
+const fieldWork = require('../../../assets/onboarding/field-work.jpg');
+const warehouseWork = require('../../../assets/onboarding/warehouse-work.jpg');
 
-// Slide 1 is from the M0.5 design. TODO(confirm): copy and illustrations for slides 2–3
-// aren't in the design yet — they reuse slide 1's image until provided.
 export const SLIDES: Slide[] = [
   {
     key: 'scan',
@@ -20,14 +20,14 @@ export const SLIDES: Slide[] = [
   },
   {
     key: 'assist',
-    title: 'Answers on the spot',
-    body: 'Ask the AI assistant about faults, parts and procedures — grounded in your manuals and history.',
-    image: scan,
+    title: 'Field support at your fingertips',
+    body: 'Access manuals, check service history and get answers about equipment, right where the work happens.',
+    image: fieldWork,
   },
   {
     key: 'expert',
-    title: 'Never stuck on your own',
-    body: 'Bring in a remote expert when you need one, and capture the fix so the next tech starts ahead.',
-    image: scan,
+    title: 'Keep every job moving',
+    body: 'Find parts, follow procedures and record the fix from the warehouse floor, so your team is ready for the next job.',
+    image: warehouseWork,
   },
 ];

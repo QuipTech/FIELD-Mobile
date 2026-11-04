@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandButton } from '@/components/BrandButton/BrandButton';
+import { FloatingShapes } from '@/components/FloatingShapes/FloatingShapes';
 import { MeshBackground, ONBOARDING_MESH } from '@/components/MeshBackground/MeshBackground';
 import { Text } from '@/components/Text/Text';
 import { SLIDES, type Slide } from './slides';
@@ -41,6 +42,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <MeshBackground spots={ONBOARDING_MESH} />
+      <FloatingShapes variant="onboarding" />
 
       <View style={styles.topBar}>
         <Pressable

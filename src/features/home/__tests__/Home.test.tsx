@@ -59,8 +59,7 @@ describe('Home', () => {
   it('shows a customer their machines and open cases, no admin tiles', async () => {
     const onOpenCase = jest.fn();
     const openCase = SAMPLE_CASES.find((c) => c.status === 'open')!;
-    await setup({ plan: 'Standard', openCases: [openCase], onOpenCase });
-    expect(screen.getByText('Standard')).toBeTruthy();
+    await setup({ openCases: [openCase], onOpenCase });
     expect(screen.getByText('My machines')).toBeTruthy();
     expect(screen.getByText('My open cases')).toBeTruthy();
     expect(screen.queryByText('Team activity')).toBeNull();
@@ -71,8 +70,7 @@ describe('Home', () => {
 
   it('shows an admin fleet KPIs and team activity instead of their machines', async () => {
     const onOpenKpi = jest.fn();
-    await setup({ plan: 'Enterprise', isAdmin: true, admin: SAMPLE_ADMIN_HOME, onOpenKpi });
-    expect(screen.getByText('Enterprise')).toBeTruthy();
+    await setup({ isAdmin: true, admin: SAMPLE_ADMIN_HOME, onOpenKpi });
     expect(screen.getByText('Team activity')).toBeTruthy();
     expect(screen.getByText('J. Rossi logged a repair')).toBeTruthy();
     expect(screen.queryByText('My machines')).toBeNull();

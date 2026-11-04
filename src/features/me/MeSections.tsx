@@ -12,6 +12,7 @@ import {
   ScanFace,
   Trash2,
   Users,
+  UserRoundPen,
 } from 'lucide-react-native';
 
 import type { BiometricSupport } from '@/auth/biometrics';
@@ -22,6 +23,7 @@ import type { MeData, TeamSummary } from './data';
 import { styles } from './styles';
 
 export type MeDestination =
+  | 'editProfile'
   | 'billing'
   | 'team'
   | 'cases'
@@ -144,6 +146,9 @@ function AccountSection({
   return (
     <>
       <SectionLabel>Account</SectionLabel>
+      <GroupedList>
+        <GroupedRow icon={UserRoundPen} label="Edit profile" onPress={go('editProfile')} />
+      </GroupedList>
       {isAdmin ? (
         <GroupedList>
           <GroupedRow

@@ -1,6 +1,7 @@
 import { ShieldCheck } from 'lucide-react-native';
 import { View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar/Avatar';
 import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
 import { colors } from '@/theme';
@@ -11,18 +12,24 @@ import { styles } from './styles';
 export type ProfileSummaryProps = {
   name: string;
   email: string;
+  avatarUrl?: string | null;
   initials: string;
   isAdmin: boolean;
   site: string;
 };
 
 /** Avatar, name, account email and role · site chip. */
-export function ProfileSummary({ name, email, initials, isAdmin, site }: ProfileSummaryProps) {
+export function ProfileSummary({
+  name,
+  email,
+  initials,
+  avatarUrl,
+  isAdmin,
+  site,
+}: ProfileSummaryProps) {
   return (
     <View style={styles.profile}>
-      <View style={styles.avatar} accessibilityElementsHidden importantForAccessibility="no">
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
+      <Avatar name={name || initials} imageUrl={avatarUrl} size={56} />
       <View style={styles.profileText}>
         <Text style={styles.name} accessibilityRole="header" numberOfLines={1}>
           {name}

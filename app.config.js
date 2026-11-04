@@ -30,6 +30,17 @@ const ENVIRONMENTS = {
   production: STAGING,
 };
 
+const SUPPORT_LINKS = {
+  privacyPolicy:
+    process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL || 'https://www.quiptechfield.com.au/privacy',
+  terms: process.env.EXPO_PUBLIC_TERMS_URL || 'https://www.quiptechfield.com.au/terms',
+  appStore: process.env.EXPO_PUBLIC_APP_STORE_URL || '',
+  playStore:
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL ||
+    'https://play.google.com/store/apps/details?id=au.com.quiptechfield.field',
+  ratingsEnabled: process.env.EXPO_PUBLIC_STORE_RATINGS_ENABLED === 'true',
+};
+
 const SCHEME = 'quiptechfield';
 const EAS_PROJECT_ID = '0d1bab1e-7439-4c09-b7a9-b2b4e2b1ab1a';
 const BASE_ID = 'au.com.quiptechfield.field';
@@ -128,7 +139,7 @@ module.exports = ({ config }) => {
     android: {
       package: `${BASE_ID}${suffix}`,
       adaptiveIcon: {
-        backgroundColor: '#39279B', // brandSplash; the background PNG draws the gradient
+        backgroundColor: '#4F3FF0', // website logo violet; matches the background PNG
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
@@ -158,7 +169,7 @@ module.exports = ({ config }) => {
         'expo-notifications',
         {
           icon: './assets/android-icon-monochrome.png',
-          color: '#39279B',
+          color: '#4F3FF0',
           defaultChannel: 'default', // ANDROID_CHANNEL in src/features/notifications/push.ts
         },
       ],
@@ -181,6 +192,7 @@ module.exports = ({ config }) => {
       scheme: SCHEME,
       cognito: env.cognito,
       personalCheckout: PERSONAL_CHECKOUT,
+      supportLinks: SUPPORT_LINKS,
       eas: { projectId: EAS_PROJECT_ID },
     },
   };

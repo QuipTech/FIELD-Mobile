@@ -1,11 +1,9 @@
 import Constants from 'expo-constants';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
-import { refreshAccess, useAccess } from '@/auth/access';
-import { signOutUser } from '@/auth/flows';
-import { runAuth } from '@/auth/runAuth';
+import { useAccess } from '@/auth/access';
+import { confirmSignOut } from '@/auth/confirmSignOut';
 import { initials, useCurrentUser } from '@/auth/useCurrentUser';
 import { useRole } from '@/auth/useRole';
 import { OptionSheet, toast } from '@/components';
@@ -16,11 +14,11 @@ import { BiometricSheet } from '@/features/me/BiometricSheet';
 import { useBiometricSetting } from '@/features/me/useBiometricSetting';
 import { LANGUAGE_CODES, languageName, useMeData } from '@/features/me/useMeData';
 import { useNotificationPrefs, useSaveNotificationPrefs } from '@/features/notifications/api';
-import { useOutbox } from '@/offline/outbox';
 import { Me } from '@/features/me/Me';
 import type { MeDestination } from '@/features/me/MeSections';
 
 const ROUTES = {
+  editProfile: '/edit-profile',
   billing: '/billing',
   team: '/team',
   aiHistory: '/ai-history',
@@ -29,17 +27,6 @@ const ROUTES = {
   cases: '/cases',
   deleteAccount: '/delete-account',
 } as const satisfies Partial<Record<MeDestination, Href>>;
-
-function confirmSignOut() {
-  const pending = useOutbox.getState().items.length;
-  const warning = pending
-    ? `${pending} change${pending === 1 ? '' : 's'} haven’t uploaded yet and will be lost.`
-    : 'You’ll need to sign in again to use FIELD on this device.';
-  Alert.alert('Sign out?', warning, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Sign out', style: 'destructive', onPress: () => runAuth(signOutUser) },
-  ]);
-}
 
 /** The Me tab: profile and settings (M9). */
 export default function MeRoute() {
@@ -50,7 +37,7 @@ export default function MeRoute() {
   const [pickingLanguage, setPickingLanguage] = useState(false);
   const biometric = useBiometricSetting(user?.email);
   const language = useAccess((s) => s.profile?.language ?? 'en');
-  const updateProfile = useUpdateProfile(() => refreshAccess());
+  const updateProfile = useUpdateProfile();
   const prefs = useNotificationPrefs();
   const savePrefs = useSaveNotificationPrefs();
   const togglePush = (on: boolean) => {
@@ -76,6 +63,7 @@ export default function MeRoute() {
     <>
       <Me
         name={user ? `${user.firstName} ${user.lastName}`.trim() : ''}
+        avatarUrl={user?.avatarUrl}
         email={user?.email ?? ''}
         initials={user ? initials(user) : ''}
         data={data}

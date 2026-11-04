@@ -1,16 +1,23 @@
-import { Tabs } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
 
-import { TabBar } from '@/features/navigation/TabBar';
+import { AppDrawerContent } from '@/features/navigation/AppDrawerContent';
+import { useTheme } from '@/theme';
 
-export default function TabsLayout() {
+/** A side menu around the existing five tabs; detail screens stay in the root stack. */
+export default function DrawerLayout() {
+  const { colors } = useTheme();
   return (
-    <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="machines" />
-      {/* Centre slot: the raised AI button. */}
-      <Tabs.Screen name="ask-ai" />
-      <Tabs.Screen name="knowledge" />
-      <Tabs.Screen name="me" />
-    </Tabs>
+    <Drawer
+      drawerContent={(props) => <AppDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front',
+        drawerPosition: 'left',
+        drawerStyle: { width: '85%', maxWidth: 360, backgroundColor: colors.bg },
+        swipeEdgeWidth: 24,
+      }}
+    >
+      <Drawer.Screen name="(main)" options={{ title: 'FIELD' }} />
+    </Drawer>
   );
 }

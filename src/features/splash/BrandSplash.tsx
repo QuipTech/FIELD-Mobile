@@ -5,7 +5,8 @@ import { Animated, Easing, Image, useWindowDimensions, View } from 'react-native
 import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Text } from '@/components/Text/Text';
-import { colors, splash } from '@/theme';
+import { FloatingShapes } from '@/components/FloatingShapes/FloatingShapes';
+import { colors, splash, useReducedMotion } from '@/theme';
 import { styles } from './styles';
 
 const logo = require('../../../assets/logo.png');
@@ -25,19 +26,25 @@ export function BrandSplash({ ready, onFinish }: BrandSplashProps) {
   const [opacity] = useState(() => new Animated.Value(1));
   const [drift] = useState(() => new Animated.Value(0));
   const [mountedAt] = useState(() => Date.now());
+  const reduced = useReducedMotion();
 
   useEffect(() => {
+    if (reduced) {
+      drift.setValue(0);
+      return;
+    }
     const loop = Animated.loop(
       Animated.timing(drift, {
         toValue: 1,
         duration: 11000,
         easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
+        isInteraction: false,
       }),
     );
     loop.start();
     return () => loop.stop();
-  }, [drift]);
+  }, [drift, reduced]);
 
   useEffect(() => {
     if (!ready) return;
@@ -91,6 +98,8 @@ export function BrandSplash({ ready, onFinish }: BrandSplashProps) {
       <Svg width={width} height={height} style={{ position: 'absolute' }}>
         <Path d={gridPath} stroke={colors.brandGrid} strokeWidth={1} />
       </Svg>
+
+      <FloatingShapes variant="splash" />
 
       <View style={styles.card}>
         <Image source={logo} style={styles.logo} resizeMode="contain" />

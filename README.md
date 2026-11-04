@@ -62,3 +62,20 @@ src/theme/       tokens.ts — the only place raw colours/sizes live
 ```
 
 Build and release (EAS) instructions land in Step 8.
+
+## Side menu links
+
+The side drawer contains FAQs, support, account settings, legal pages, and a store-rating link.
+Privacy Policy and Terms use the approved public website URLs by default. The Android listing
+URL is configured, but ratings stay unavailable while the apps are in testing. Override the
+destinations through these build environment variables:
+
+- `EXPO_PUBLIC_PRIVACY_POLICY_URL`
+- `EXPO_PUBLIC_TERMS_URL`
+- `EXPO_PUBLIC_APP_STORE_URL` (the published iOS listing)
+- `EXPO_PUBLIC_PLAY_STORE_URL` (defaults to `au.com.quiptechfield.field` on Google Play)
+- `EXPO_PUBLIC_STORE_RATINGS_ENABLED=true` (enable only once the listings are public)
+
+If a legal URL is unavailable, its page explains how to request a copy. Rate this app explains
+that ratings become available after publication until ratings are enabled and a listing is set. No generated legal text or guessed store links are used.
+The drawer wraps `(tabs)/(main)`; existing public route paths and the five-tab bar are unchanged.

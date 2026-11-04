@@ -2,6 +2,7 @@ import { Plus, ScanLine } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { SearchField } from '@/components/SearchField/SearchField';
+import { DrawerMenuButton } from '@/features/navigation/DrawerMenu';
 import { colors } from '@/theme';
 import type { Machine } from './data';
 import { styles } from './styles';
@@ -22,6 +23,7 @@ export function SearchBar({
 }) {
   return (
     <View style={[styles.searchBar, { paddingTop: topInset + 8 }]}>
+      <DrawerMenuButton />
       <SearchField value={query} onChange={onQuery} label="Search assets" style={styles.search} />
       <Pressable
         onPress={onScan}

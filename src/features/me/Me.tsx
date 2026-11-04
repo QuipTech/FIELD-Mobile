@@ -10,13 +10,14 @@ import { styles } from './styles';
 export type MeProps = MeSectionsProps & {
   name: string;
   email: string;
+  avatarUrl?: string | null;
   initials: string;
   /** App version shown at the bottom, e.g. "1.0.0". */
   version: string;
 };
 
 /** M9 Profile & settings (the Me tab). */
-export function Me({ name, email, initials, version, ...sections }: MeProps) {
+export function Me({ name, email, initials, avatarUrl, version, ...sections }: MeProps) {
   const { data, isAdmin } = sections;
 
   return (
@@ -26,6 +27,7 @@ export function Me({ name, email, initials, version, ...sections }: MeProps) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileSummary
+          avatarUrl={avatarUrl}
           name={name}
           email={email}
           initials={initials}

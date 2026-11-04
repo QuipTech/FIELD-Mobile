@@ -77,6 +77,13 @@ describe('access', () => {
     expect(state.capabilities).toMatchObject({ canUseAi: true, canManageMachines: false });
     expect(state.profile).toMatchObject({ firstName: 'Tess', site: 'Pit 4' });
     expect(state.profile?.tenant?.name).toBe('Acme Mining');
+    expect(mockUpdateApiUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: 'Tess',
+        lastName: 'Tech',
+        avatarUrl: null,
+      }),
+    );
   });
 
   it('derives capabilities from permissions when the payload has none', async () => {

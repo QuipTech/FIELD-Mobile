@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DrawerMenuButton } from '@/features/navigation/DrawerMenu';
 import { colors, fontFamily, spacing } from '@/theme';
 import { Text } from '../Text/Text';
 
@@ -11,6 +12,7 @@ export function TabHeader({ title, right }: { title: string; right?: ReactNode }
   return (
     <View style={[styles.header, { paddingTop: insets.top }]}>
       <View style={styles.bar}>
+        <DrawerMenuButton />
         <Text style={styles.title} accessibilityRole="header" numberOfLines={1}>
           {title}
         </Text>

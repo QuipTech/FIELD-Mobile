@@ -38,23 +38,6 @@ export const styles = StyleSheet.create({
   },
   headerText: { flex: 1, gap: 1 },
   headerTitle: { fontFamily: fontFamily.medium, fontSize: 16, lineHeight: 22 },
-  bell: {
-    width: 44,
-    height: 44,
-    borderRadius: brandControl.radius,
-    backgroundColor: colors.amberTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bellDot: {
-    position: 'absolute',
-    top: 10,
-    right: 11,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.danger,
-  },
   avatar: {
     width: 44,
     height: 44,
@@ -124,7 +107,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.fill,
   },
-  plan: { marginRight: 2 },
 
   // Admin KPI tiles (2×2)
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },

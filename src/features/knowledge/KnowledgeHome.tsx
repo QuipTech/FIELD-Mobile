@@ -1,4 +1,4 @@
-import { Bell, Plus } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { IconButton } from '@/components/Button/IconButton';
@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ErrorState/ErrorState';
 import { Screen } from '@/components/Screen/Screen';
 import { Skeleton } from '@/components/Skeleton/Skeleton';
 import { TabHeader } from '@/components/TabHeader/TabHeader';
+import { NotificationButton } from '@/features/notifications/NotificationButton';
 import { makeStyles, spacing } from '@/theme';
 import { DocRow } from './DocRow';
 import { Attention, Recent } from './HomeSections';
@@ -43,7 +44,7 @@ export function KnowledgeHome(props: KnowledgeHomeProps) {
       {isAdmin && props.onUpload && (
         <IconButton icon={Plus} accessibilityLabel="Upload a document" onPress={props.onUpload} />
       )}
-      <IconButton icon={Bell} accessibilityLabel="Notifications" onPress={props.onNotifications} />
+      <NotificationButton onPress={props.onNotifications} />
     </View>
   );
 

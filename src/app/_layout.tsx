@@ -21,6 +21,10 @@ import { hydrateThemePreference, useAppFonts, useNavigationOptions } from '@/the
 
 /** Signed-in screens pushed over the tabs (header with back button, no tab bar). */
 const DETAIL_SCREENS = {
+  'edit-profile': 'Edit profile',
+  faq: 'Frequently asked questions',
+  'privacy-policy': 'Privacy policy',
+  terms: 'Terms of service',
   cases: 'Cases',
   billing: 'Billing & plan',
   'offline-sync': 'Offline & sync',
