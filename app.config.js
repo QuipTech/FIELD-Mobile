@@ -44,6 +44,7 @@ const SUPPORT_LINKS = {
 const SCHEME = 'quiptechfield';
 const EAS_PROJECT_ID = '0d1bab1e-7439-4c09-b7a9-b2b4e2b1ab1a';
 const BASE_ID = 'au.com.quiptechfield.field';
+const IOS_BASE_ID = 'com.qubetech.field';
 // Bare workflow (android/ exists) disallows runtimeVersion policies; keep this equal to the app version.
 const APP_VERSION = '1.0.0';
 const FACE_ID_PERMISSION = 'Allow $(PRODUCT_NAME) to use Face ID to sign you in.';
@@ -75,7 +76,8 @@ const PERMISSION_PLUGINS = [
   [
     'expo-image-picker',
     {
-      photosPermission: 'Allow $(PRODUCT_NAME) to attach photos to your Ask AI questions.',
+      photosPermission:
+        'Allow $(PRODUCT_NAME) to attach photos to your Ask AI questions and set your profile photo.',
       cameraPermission:
         'Allow $(PRODUCT_NAME) to use the camera to scan asset tags and photograph machines.',
       // Not `false`: that blocks RECORD_AUDIO on Android, which voice questions need.
@@ -131,7 +133,7 @@ module.exports = ({ config }) => {
     userInterfaceStyle: 'light',
     ios: {
       supportsTablet: true,
-      bundleIdentifier: `${BASE_ID}${suffix}`,
+      bundleIdentifier: `${IOS_BASE_ID}`,
       usesAppleSignIn: true,
       // Needs public/.well-known/apple-app-site-association on the portal (see src/lib/links.ts).
       associatedDomains: [`applinks:${webHost}`],
@@ -163,6 +165,10 @@ module.exports = ({ config }) => {
       'expo-updates',
       // Stripe pages (invoices, Customer Portal) open in an in-app browser session.
       'expo-web-browser',
+      // Native Payment Sheet for the final charge when deleting a machine.
+      // The plugin reads its options without a default, so it needs an object even when empty.
+      // Add merchantIdentifier / enableGooglePay here to turn on Apple Pay / Google Pay.
+      ['@stripe/stripe-react-native', { merchantIdentifier: '', enableGooglePay: false }],
       ...PERMISSION_PLUGINS,
       [
         // Push via the backend (SNS → APNs / FCM). Adds the iOS aps-environment entitlement.

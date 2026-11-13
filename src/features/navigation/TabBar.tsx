@@ -14,6 +14,7 @@ import { haptics } from '@/lib/haptics';
 import { durations, useReducedMotion } from '@/theme';
 import { AiTabButton } from './AiTabButton';
 import { BAR_PADDING, PILL, useStyles } from './styles';
+import { useSetTabBarSpace } from './tabBarSpace';
 import { TabItem } from './TabItems';
 
 /** Labels and icons; the order comes from (tabs)/_layout. Cases opens from Me. */
@@ -33,6 +34,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
+  const setSpace = useSetTabBarSpace();
   const [width, setWidth] = useState(0);
   const routes = state.routes.filter((r) => r.name === AI_ROUTE || TABS[r.name]);
   const active = state.routes[state.index]?.name;
@@ -56,7 +58,12 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   }));
 
   return (
-    <View style={[styles.backdrop, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+    // Floats over the screen (content shows behind it); empty space around the bar passes touches.
+    <View
+      style={[styles.backdrop, { paddingBottom: Math.max(insets.bottom, 12) }]}
+      pointerEvents="box-none"
+      onLayout={(e) => setSpace(Math.ceil(e.nativeEvent.layout.height))}
+    >
       <View
         style={styles.bar}
         accessibilityRole="tablist"

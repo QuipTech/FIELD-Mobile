@@ -3,8 +3,11 @@ import { ScrollView, View } from 'react-native';
 import { TabHeader } from '@/components/TabHeader/TabHeader';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
 import { Text } from '@/components/Text/Text';
+import { useTabBarSpace } from '@/features/navigation/tabBarSpace';
+import { spacing } from '@/theme';
 import { MeSections, type MeSectionsProps } from './MeSections';
 import { PlanCard, ProfileSummary } from './ProfileCards';
+import { isComplimentary } from './data';
 import { styles } from './styles';
 
 export type MeProps = MeSectionsProps & {
@@ -19,13 +22,14 @@ export type MeProps = MeSectionsProps & {
 /** M9 Profile & settings (the Me tab). */
 export function Me({ name, email, initials, avatarUrl, version, ...sections }: MeProps) {
   const { data, isAdmin } = sections;
+  const tabBar = useTabBarSpace();
 
   return (
     <View style={styles.root}>
       <MeshBackground spots={APP_MESH} />
       <TabHeader title="Me" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBar + spacing.md }]}>
         <ProfileSummary
           avatarUrl={avatarUrl}
           name={name}
@@ -34,7 +38,7 @@ export function Me({ name, email, initials, avatarUrl, version, ...sections }: M
           isAdmin={isAdmin}
           site={data.site}
         />
-        {data.plan && <PlanCard plan={data.plan} />}
+        {data.plan && !isComplimentary(data.plan) && <PlanCard plan={data.plan} />}
 
         <MeSections {...sections} />
 

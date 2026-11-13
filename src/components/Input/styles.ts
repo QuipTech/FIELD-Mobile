@@ -24,6 +24,8 @@ export const useStyles = makeStyles((c) => ({
     paddingVertical: spacing.sm,
   },
   multiline: { minHeight: 120, textAlignVertical: 'top' },
+  // SelectField: one centred line beside the chevron (no stretch, unlike the TextInput).
+  selectText: { ...typeScale.body, flex: 1 },
   // OtpInput
   otpRow: { flexDirection: 'row', gap: spacing.xs },
   otpBox: {

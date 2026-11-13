@@ -17,10 +17,21 @@ export type SearchFieldProps = {
   /** Placeholder and accessibility name, e.g. "Search manuals". */
   label: string;
   style?: StyleProp<ViewStyle>;
+  /** Focus (and open the keyboard) on mount, e.g. after tapping a search icon. */
+  autoFocus?: boolean;
+  /** The keyboard's Search key. */
+  onSubmit?: () => void;
 };
 
 /** Rounded search box with a clear button (M3, M5.6, M14). */
-export function SearchField({ value, onChange, label, style }: SearchFieldProps) {
+export function SearchField({
+  value,
+  onChange,
+  label,
+  style,
+  autoFocus,
+  onSubmit,
+}: SearchFieldProps) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={[styles.field, focused && styles.focused, style]}>
@@ -28,11 +39,13 @@ export function SearchField({ value, onChange, label, style }: SearchFieldProps)
       <TextInput
         value={value}
         onChangeText={onChange}
+        autoFocus={autoFocus}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={label}
         placeholderTextColor={colors.inkSubtle}
         returnKeyType="search"
+        onSubmitEditing={onSubmit}
         autoCorrect={false}
         autoCapitalize="none"
         maxFontSizeMultiplier={layout.maxFontScale}

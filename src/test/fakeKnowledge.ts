@@ -79,9 +79,68 @@ function documents(u: URL) {
   );
 }
 
+const LIBRARY = {
+  items: [
+    {
+      id: 'd10t-service-manual',
+      title: 'D10T Service Manual',
+      type: 'manual',
+      snippet: 'Check the <mark>accumulator</mark> pre-charge before removing the line.',
+      page: 142,
+      heading: 'Hydraulics',
+      sectionId: 's-142',
+      models: ['CAT D10T'],
+      source: 'shared',
+      sourceOem: 'Caterpillar',
+      versionNumber: 4,
+      updatedAt: '2026-10-01T00:00:00Z',
+    },
+  ],
+  total: 1,
+  searchMode: 'browse',
+  makes: [{ id: 'make-cat', name: 'Caterpillar' }],
+  activeModel: null,
+};
+
+const ARTICLE = {
+  id: 'd10t-service-manual',
+  title: 'D10T Service Manual',
+  type: 'manual',
+  machineMake: 'CAT',
+  machineModel: 'D10T',
+  revision: 4,
+  pageCount: 340,
+  source: 'quiptech_library',
+  state: 'live',
+  fileName: 'd10t.pdf',
+  pdfUrl: null,
+  summary: 'Service procedures for the D10T dozer.',
+  sections: [
+    {
+      id: 's-1',
+      heading: 'Safety',
+      page: 3,
+      content: 'Lock out the machine.\n\nWear PPE.',
+      figures: [],
+    },
+    {
+      id: 's-142',
+      heading: 'Hydraulics',
+      page: 142,
+      content: 'Check the accumulator.',
+      figures: [],
+    },
+  ],
+  related: [],
+  appliesBulletins: [],
+};
+
 export function knowledgeRoute(u: URL): unknown {
   const path = u.pathname;
   if (path === '/knowledge/brands') return SAMPLE_BRANDS.map(apiBrand);
+  if (path === '/knowledge/library') return LIBRARY;
+  if (path === '/knowledge/models') return [{ id: 'mod-d10t', displayName: 'CAT D10T' }];
+  if (path === '/documents/d10t-service-manual/article') return ARTICLE;
   if (path === '/knowledge/documents') return { items: documents(u).map(toApiDoc), total: 0 };
   if (path === '/knowledge/facets')
     return {

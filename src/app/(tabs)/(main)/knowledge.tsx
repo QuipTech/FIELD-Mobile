@@ -1,46 +1,38 @@
 import { router } from 'expo-router';
+import { useCallback } from 'react';
 
-import { useRole } from '@/auth/useRole';
-import { toast } from '@/components';
-import { useBrands, useKnowledgeAttention } from '@/features/knowledge/api';
-import { useDocsForMyMachines, useRecentDocs } from '@/features/knowledge/personal';
-import { KnowledgeHome } from '@/features/knowledge/KnowledgeHome';
+import { TabHeader } from '@/components/TabHeader/TabHeader';
+import type { KnowledgeResult } from '@/features/knowledge/library/api';
+import { openReader } from '@/features/knowledge/library/openReader';
+import { KnowledgeLibrary } from '@/features/knowledge/library/KnowledgeLibrary';
 import { openDoc } from '@/features/knowledge/navigation';
+import { OfflineLibrary } from '@/features/knowledge/OfflineLibrary';
 import { useOfflineLibrary } from '@/features/knowledge/offlineStore';
+import { NotificationButton } from '@/features/notifications/NotificationButton';
 import { useIsOffline } from '@/lib/network';
+import { queryClient } from '@/lib/queryClient';
 
 export default function KnowledgeRoute() {
-  const { capabilities } = useRole();
-  const isAdmin = capabilities.isKnowledgeAdmin;
   const offline = useIsOffline();
-  const brands = useBrands();
-  const recent = useRecentDocs();
-  const forMachines = useDocsForMyMachines();
-  const attention = useKnowledgeAttention(isAdmin);
   const savedDocs = useOfflineLibrary((s) => s.docs);
+  const onOpen = useCallback((item: KnowledgeResult) => openReader(item.id, item.sectionId), []);
 
   return (
-    <KnowledgeHome
-      brands={brands.data}
-      brandsLoading={brands.isPending && !brands.error}
-      brandsError={brands.error}
-      onRetry={() => brands.refetch()}
-      recent={recent.data ?? []}
-      forMachines={forMachines.data}
-      attention={isAdmin ? attention.data : undefined}
-      isAdmin={isAdmin}
-      offline={offline}
-      savedDocs={savedDocs}
-      onSearch={() => router.push('/knowledge/search')}
-      onNotifications={() => router.push('/notifications')}
-      // TODO(api): uploads happen in the FIELD console until a mobile upload endpoint exists.
-      onUpload={() => toast.show('Upload documents from the FIELD console.')}
-      onOpenBrand={(id) => router.push({ pathname: '/knowledge/brand/[id]', params: { id } })}
-      onOpenDoc={(id, page) => openDoc(id, page)}
-      onOpenReview={() => {
-        const first = attention.data?.reviewDocIds[0];
-        if (first) openDoc(first);
-      }}
-    />
+    <>
+      <TabHeader
+        title="Knowledge"
+        right={<NotificationButton onPress={() => router.push('/notifications')} />}
+      />
+      {offline ? (
+        // No connection: documents saved on this device.
+        <OfflineLibrary
+          docs={savedDocs}
+          onRetry={() => void queryClient.invalidateQueries({ queryKey: ['knowledge'] })}
+          onOpenDoc={(id) => openDoc(id)}
+        />
+      ) : (
+        <KnowledgeLibrary onOpen={onOpen} />
+      )}
+    </>
   );
 }

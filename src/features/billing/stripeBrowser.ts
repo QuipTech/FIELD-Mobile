@@ -50,10 +50,27 @@ export const APP_RETURN_URL = `${env.scheme}://billing-return`;
 /** Sent to `/payment` and `/portal-session` so Stripe returns to the app, not the website. */
 export const RETURN_TO_APP = { returnTo: 'app' } as const;
 
+/** In-app browser as a page sheet on iOS, so it feels like a native payment sheet. */
+const SHEET: WebBrowser.WebBrowserOpenOptions = {
+  presentationStyle: 'pageSheet' as WebBrowser.WebBrowserPresentationStyle,
+};
+
 /** Invoice PDFs: a short-lived signed Stripe URL, shown in the in-app browser. */
 export async function openDocument(url: string): Promise<void> {
   await WebBrowser.openBrowserAsync(
     verified(url, (host) => host === 'stripe.com' || host.endsWith('.stripe.com')),
+    SHEET,
+  );
+}
+
+/**
+ * Hosted invoice pages don't redirect back to the app, so they open in the plain in-app browser
+ * and resolve when the user closes it; the caller then refreshes from the API.
+ */
+export async function openHostedPage(url: string): Promise<void> {
+  await WebBrowser.openBrowserAsync(
+    verified(url, (host) => STRIPE_PAGE_HOSTS.includes(host)),
+    SHEET,
   );
 }
 

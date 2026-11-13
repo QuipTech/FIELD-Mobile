@@ -18,7 +18,7 @@ import { pendingEntries, useOutbox } from '@/offline/outbox';
 import { useMachineHistory } from './api';
 import { useMachineComponents } from './componentsApi';
 import { useMachineManuals } from './manualsApi';
-import { useSnapshots } from './snapshots';
+import { toConfigChange, useSnapshots } from './snapshots';
 
 type Kind = { label: string; icon: LucideIcon; tone: PillTone };
 
@@ -131,7 +131,7 @@ export function useMachineRecords(id: string | undefined): MachineRecords {
     () => ({
       components: components.data ?? [],
       history: [...pendingEntries(queued, id), ...(history.data ?? [])],
-      configuration: snapshots.data ?? [],
+      configuration: (snapshots.data ?? []).map(toConfigChange),
       manuals,
     }),
     [id, queued, components.data, history.data, snapshots.data, manuals],

@@ -5,7 +5,11 @@
  * form parts (`{ uri, name, type }`): it throws "Unsupported FormDataPart implementation" before
  * the request leaves the device. RN's XMLHttpRequest streams those files natively.
  */
-export function xhrFetch(url: string, init: RequestInit): Promise<Response> {
+export function xhrFetch(
+  url: string,
+  init: RequestInit,
+  onUploadProgress?: (fraction: number) => void,
+): Promise<Response> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const signal = init.signal;
@@ -14,6 +18,11 @@ export function xhrFetch(url: string, init: RequestInit): Promise<Response> {
     xhr.open(init.method ?? 'GET', url);
     for (const [key, value] of Object.entries((init.headers ?? {}) as Record<string, string>)) {
       xhr.setRequestHeader(key, value);
+    }
+    if (onUploadProgress && xhr.upload) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && e.total > 0) onUploadProgress(e.loaded / e.total);
+      };
     }
     xhr.onload = () => {
       signal?.removeEventListener('abort', onAbort);

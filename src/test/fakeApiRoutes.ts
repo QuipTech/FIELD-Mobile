@@ -74,17 +74,21 @@ const page = (items: unknown[]) => ({ items, total: items.length, page: 1, pageS
 
 const EXACT: Record<string, unknown> = {
   '/machines/HT-2201/snapshots': [
-    { id: 's2', createdAt: at(200), label: 'Hydraulic pump: 4T-9410 → 4T-9455' },
-    { id: 's1', createdAt: at(400), label: 'Controller updated to v4.2.1', isKnownGood: true },
-  ],
-  '/machines/HT-2201/snapshots/compare': [
+    { id: 's2', takenAt: at(200), takenBy: null, trigger: 'component_replaced', isKnownGood: false },
     {
-      kind: 'changed',
-      systemName: 'Hydraulics',
-      componentName: 'Main pump',
-      fields: [{ field: 'serialNumber', before: '4T-9410', after: '4T-9455' }],
+      id: 's1',
+      takenAt: at(400),
+      takenBy: { id: 'u1', name: 'Jo Okoye', avatarUrl: null },
+      trigger: 'service',
+      isKnownGood: true,
     },
   ],
+  '/machines/HT-2201/snapshots/diff': {
+    from: { id: 's1', takenAt: at(400), takenBy: null, trigger: 'service', isKnownGood: true },
+    to: { id: 's2', takenAt: at(200), takenBy: null, trigger: 'component_replaced', isKnownGood: false },
+    rows: [{ kind: 'changed', componentName: 'Main pump', before: '4T-9410', after: '4T-9455' }],
+    unchanged: [{ componentName: 'Controller', value: 'v4.2.1' }],
+  },
   '/machines/HT-2201/manuals': {
     items: [
       {

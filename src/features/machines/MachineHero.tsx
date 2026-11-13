@@ -2,9 +2,7 @@ import { Truck } from 'lucide-react-native';
 import { Image, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-import { Pill } from '@/components/Pill/Pill';
 import { Text } from '@/components/Text/Text';
-import { formatHours } from '@/lib/format';
 import { colors } from '@/theme';
 import type { Machine } from './data';
 import { styles } from './styles';
@@ -40,23 +38,6 @@ export function MachineHero({ machine }: { machine: Machine }) {
       <Text variant="caption" color="onBrandMuted">
         No photo yet
       </Text>
-    </View>
-  );
-}
-
-/** Model, hours, location and serial chips under the hero. */
-export function SpecChips({ machine: m }: { machine: Machine }) {
-  const specs = [
-    m.model,
-    m.hours !== undefined ? formatHours(m.hours) : undefined,
-    [m.site, m.bench].filter(Boolean).join(' · '),
-    `S/N ${m.serial}`,
-  ].filter((s): s is string => !!s);
-  return (
-    <View style={styles.specs}>
-      {specs.map((s) => (
-        <Pill key={s} label={s} tone="muted" />
-      ))}
     </View>
   );
 }

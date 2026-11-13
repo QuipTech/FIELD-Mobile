@@ -19,6 +19,8 @@ export type RequestOptions = {
   retry?: Partial<RetryOptions> | false;
   /** Attach bearer token (default true). */
   auth?: boolean;
+  /** Multipart uploads only: called with 0–1 as the body is sent. */
+  onUploadProgress?: (fraction: number) => void;
 };
 
 export type HttpClientConfig = { baseUrl: string; defaultTimeoutMs?: number };
@@ -30,6 +32,7 @@ async function fetchWithTimeout(
   init: RequestInit,
   timeoutMs: number,
   outer?: AbortSignal,
+  onUploadProgress?: (fraction: number) => void,
 ): Promise<Response> {
   const controller = new AbortController();
   let timedOut = false;
@@ -40,9 +43,11 @@ async function fetchWithTimeout(
     controller.abort();
   }, timeoutMs);
   // File uploads go over XHR: `expo/fetch` (the global fetch) can't send `{ uri }` form parts.
-  const send = init.body instanceof FormData ? xhrFetch : fetch;
   try {
-    return await send(url, { ...init, signal: controller.signal });
+    if (init.body instanceof FormData) {
+      return await xhrFetch(url, { ...init, signal: controller.signal }, onUploadProgress);
+    }
+    return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (outer?.aborted) throw error;
     // Kept in the log: below, every failure becomes a generic NetworkError (and is retried).
@@ -84,7 +89,13 @@ export function createHttpClient(config: HttpClientConfig) {
     const timeout = opts.timeoutMs ?? timeoutDefault;
     const token = useAuth ? await getToken() : null;
     if (useAuth && !token) log('http', `no auth token for ${opts.method ?? 'GET'} ${url}`);
-    const res = await fetchWithTimeout(url, buildInit(opts, token), timeout, opts.signal);
+    const res = await fetchWithTimeout(
+      url,
+      buildInit(opts, token),
+      timeout,
+      opts.signal,
+      opts.onUploadProgress,
+    );
     if (res.status !== 401 || !useAuth) return res;
 
     const fresh = await refreshToken();
@@ -92,7 +103,13 @@ export function createHttpClient(config: HttpClientConfig) {
       notifySessionExpired();
       return res;
     }
-    const retried = await fetchWithTimeout(url, buildInit(opts, fresh), timeout, opts.signal);
+    const retried = await fetchWithTimeout(
+      url,
+      buildInit(opts, fresh),
+      timeout,
+      opts.signal,
+      opts.onUploadProgress,
+    );
     if (retried.status === 401) notifySessionExpired();
     return retried;
   }

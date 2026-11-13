@@ -24,6 +24,14 @@ describe('machine mapping', () => {
     });
   });
 
+  it('reads the lifecycle state and falls back to the first photo', () => {
+    const base = { id: 'uuid-1', serialNumber: 'SN-1', status: 'running' };
+    expect(toMachine({ ...base, lifecycleState: 'active' }).lifecycle).toBe('active');
+    expect(toMachine({ ...base, lifecycleState: 'registered' }).lifecycle).toBe('registered');
+    expect(toMachine({ ...base, lifecycleState: 'something_new' }).lifecycle).toBeUndefined();
+    expect(toMachine({ ...base, photoUrls: ['https://s/a.jpg'] }).photoUrl).toBe('https://s/a.jpg');
+  });
+
   it('resolves scanned codes by label or serial, routing by id', () => {
     const fleet = [
       toMachine({ id: 'uuid-9', label: 'HT-2201', serialNumber: '4GZ01288', status: 'down' }),
@@ -92,6 +100,11 @@ describe('dashboard mapping', () => {
       status: 'down',
     });
     expect(home.recent[0]?.title).toBe('Repair logged on HT-2201');
+    expect(home.stats).toMatchObject({
+      openCases: { total: API_DASHBOARD.openCases.total },
+      machinesDown: { total: API_DASHBOARD.machinesDown.total },
+      entriesThisWeek: API_DASHBOARD.entriesThisWeek,
+    });
   });
 
   it('hides uptime until the API tracks any (a new company)', () => {

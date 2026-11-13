@@ -61,7 +61,6 @@ export type FilterSelectProps<T extends string> = {
 export function FilterSelect<T extends string>(props: FilterSelectProps<T>) {
   const { title, value, options, onChange, allValue, placeholder, icon } = props;
   const [open, setOpen] = useState(false);
-  const insets = useSafeAreaInsets();
   const current = options.find((o) => o.value === value)?.label ?? title;
   const showPlaceholder = placeholder !== undefined && value === allValue;
 
@@ -75,42 +74,71 @@ export function FilterSelect<T extends string>(props: FilterSelectProps<T>) {
         onPress={() => setOpen(true)}
         accessibilityLabel={`${title}: ${current}`}
       />
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable
-          style={styles.scrim}
-          onPress={() => setOpen(false)}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-        />
-        <View
-          style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}
-          accessibilityViewIsModal
-        >
-          <Text style={styles.sheetTitle} accessibilityRole="header">
-            {title}
-          </Text>
-          <ScrollView style={styles.sheetList} bounces={false}>
-            {options.map((o) => {
-              const checked = o.value === value;
-              return (
-                <Pressable
-                  key={o.value}
-                  onPress={() => {
-                    onChange(o.value);
-                    setOpen(false);
-                  }}
-                  style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked }}
-                >
-                  <Text color={checked ? 'brand' : 'ink'}>{o.label}</Text>
-                  {checked && <Check size={18} color={colors.brand} strokeWidth={2.5} />}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      </Modal>
+      <ChoiceSheet
+        visible={open}
+        title={title}
+        options={options}
+        value={value}
+        onChange={onChange}
+        onClose={() => setOpen(false)}
+      />
     </>
+  );
+}
+
+/**
+ * One-choice list in a bottom panel over a scrim. A React Native `Modal`, so it shows above
+ * every screen, including pushed stack screens. Long lists scroll inside the panel.
+ */
+export function ChoiceSheet<T extends string>({
+  visible,
+  title,
+  options,
+  value,
+  onChange,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  options: FilterOption<T>[];
+  value: T | undefined;
+  onChange: (value: T) => void;
+  onClose: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        style={styles.scrim}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+      />
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]} accessibilityViewIsModal>
+        <Text style={styles.sheetTitle} accessibilityRole="header">
+          {title}
+        </Text>
+        <ScrollView style={styles.sheetList} bounces={false}>
+          {options.map((o) => {
+            const checked = o.value === value;
+            return (
+              <Pressable
+                key={o.value}
+                onPress={() => {
+                  onChange(o.value);
+                  onClose();
+                }}
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                accessibilityRole="radio"
+                accessibilityState={{ checked }}
+              >
+                <Text color={checked ? 'brand' : 'ink'}>{o.label}</Text>
+                {checked && <Check size={18} color={colors.brand} strokeWidth={2.5} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }

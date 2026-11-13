@@ -1,4 +1,4 @@
-import { LifeBuoy } from 'lucide-react-native';
+import { Clock, LifeBuoy, Megaphone, Sparkles, Truck, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/Text/Text';
@@ -7,12 +7,14 @@ import { colors } from '@/theme';
 import type { AdminKpi, AdminKpiKey, TeamActivity } from './adminData';
 import { styles } from './styles';
 
-const KPI_COLOR: Partial<Record<AdminKpiKey, string>> = {
-  machinesDown: colors.danger,
-  casesNearBreach: colors.amber,
+const KPI_LOOK: Record<AdminKpiKey, { icon: LucideIcon; fg: string; bg: string }> = {
+  machinesDown: { icon: Truck, fg: colors.danger, bg: colors.dangerTint },
+  casesNearBreach: { icon: Clock, fg: colors.amber, bg: colors.amberTint },
+  aiToReview: { icon: Sparkles, fg: colors.brandDeep, bg: colors.brandTint },
+  bulletinsToApprove: { icon: Megaphone, fg: colors.brandDeep, bg: colors.brandTint },
 };
 
-/** Admin H1: 2×2 tiles, each opening the list it counts. */
+/** Admin H1: "Needs attention" 2×2 tiles, each opening the list it counts; tinted when not zero. */
 export function KpiGrid({
   kpis,
   onOpen,
@@ -21,24 +23,47 @@ export function KpiGrid({
   onOpen: (key: AdminKpiKey) => void;
 }) {
   return (
-    <View style={styles.kpiGrid}>
-      {kpis.map((k) => (
-        <Pressable
-          key={k.key}
-          onPress={() => onOpen(k.key)}
-          style={({ pressed }) => [styles.card, styles.kpi, pressed && styles.tilePressed]}
-          accessibilityRole="button"
-          accessibilityLabel={`${k.value} ${k.label}`}
-        >
-          <Text style={[styles.kpiValue, { color: KPI_COLOR[k.key] ?? colors.ink }]}>
-            {k.value}
-          </Text>
-          <Text variant="caption" color="inkMuted">
-            {k.label}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+    <>
+      <Text style={styles.sectionTitle} accessibilityRole="header">
+        Needs attention
+      </Text>
+      <View style={styles.kpiGrid}>
+        {kpis.map((k) => {
+          const look = KPI_LOOK[k.key];
+          const Icon = look.icon;
+          const active = k.value > 0;
+          return (
+            <Pressable
+              key={k.key}
+              onPress={() => onOpen(k.key)}
+              style={({ pressed }) => [
+                styles.card,
+                styles.kpi,
+                {
+                  borderColor: active ? look.bg : colors.divider,
+                  backgroundColor: active ? look.bg : colors.surface,
+                },
+                pressed && styles.tilePressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${k.value} ${k.label}`}
+            >
+              <View style={styles.kpiTop}>
+                <Text style={[styles.kpiValue, { color: active ? look.fg : colors.ink }]}>
+                  {k.value}
+                </Text>
+                <View style={[styles.iconBox, { backgroundColor: active ? look.bg : colors.fill }]}>
+                  <Icon size={18} color={active ? look.fg : colors.inkSubtle} strokeWidth={2} />
+                </View>
+              </View>
+              <Text variant="caption" color="inkMuted" numberOfLines={2} style={styles.kpiLabel}>
+                {k.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
   );
 }
 

@@ -1,7 +1,8 @@
 import { fontFamily, makeStyles } from '@/theme';
 
 export const useDrawerStyles = makeStyles((c) => ({
-  content: { flexGrow: 1, paddingHorizontal: 14, gap: 22 },
+  root: { flex: 1 },
+  content: { paddingHorizontal: 14, gap: 22 },
   hero: {
     backgroundColor: c.brandSplash,
     borderRadius: 24,
@@ -70,12 +71,8 @@ export const useDrawerStyles = makeStyles((c) => ({
     backgroundColor: c.primary,
     marginHorizontal: 5,
   },
-  signOut: {
-    backgroundColor: c.dangerTint,
-    borderWidth: 1,
-    borderColor: c.dangerTint,
-    borderRadius: 18,
-    padding: 4,
-  },
-  footer: { marginTop: 'auto', paddingVertical: 10, paddingHorizontal: 6, gap: 4 },
+  signOut: { backgroundColor: c.dangerTint, borderRadius: 18, padding: 4 },
+  // paddingBottom is set inline from the safe area.
+  bottom: { padding: 14, gap: 8, borderTopWidth: 1, borderTopColor: c.border },
+  version: { textAlign: 'center' },
 }));

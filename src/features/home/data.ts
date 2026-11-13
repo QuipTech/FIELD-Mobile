@@ -17,6 +17,13 @@ export type AssignedMachine = {
 
 export type RecentEntry = { id: string; title: string; detail: string };
 
+/** The three headline tiles, as on the web dashboard. */
+export type HomeStats = {
+  openCases: { total: number; breachingSla: number };
+  machinesDown: { total: number; labels: string[] };
+  entriesThisWeek: { total: number; mine: number };
+};
+
 export type HomeData = {
   /** The site most of my machines are on; empty when none have one. */
   site: string;
@@ -25,6 +32,8 @@ export type HomeData = {
   uptime: { percent: number; weeks: number; weekly: number[] } | null;
   machines: AssignedMachine[];
   recent: RecentEntry[];
+  /** Null on an older API without the totals. */
+  stats: HomeStats | null;
 };
 
 // GET /dashboard (staging, verified 2026-10-20). Only the fields Home shows are parsed.
@@ -48,6 +57,15 @@ const dashboard = z.object({
   ),
   /** Machines I have worked on, down or service due first. */
   myMachines: z.array(dashboardMachine),
+  // Headline totals (the web dashboard's three tiles).
+  openCases: z.object({ total: z.number(), breachingSla: z.number().default(0) }).nullish(),
+  machinesDown: z
+    .object({
+      total: z.number(),
+      machines: z.array(z.object({ label: z.string().nullish() }).loose().nullish()).default([]),
+    })
+    .nullish(),
+  entriesThisWeek: z.object({ total: z.number(), mine: z.number().default(0) }).nullish(),
 });
 type Dashboard = z.infer<typeof dashboard>;
 
@@ -85,6 +103,17 @@ export function toHomeData(d: Dashboard, now = Date.now()): HomeData {
           .join(' · ') || 'No hours recorded yet',
       status: STATUS[m.status] ?? 'ok',
     })),
+    stats:
+      d.openCases && d.machinesDown && d.entriesThisWeek
+        ? {
+            openCases: d.openCases,
+            machinesDown: {
+              total: d.machinesDown.total,
+              labels: d.machinesDown.machines.map((m) => m?.label).filter((l): l is string => !!l),
+            },
+            entriesThisWeek: d.entriesThisWeek,
+          }
+        : null,
     recent: d.recentActivity.map((a) => ({
       id: a.id,
       title: a.title,

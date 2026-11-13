@@ -13,6 +13,10 @@ export type Plan = {
   assets: number;
 };
 
+/** QuipTech's own and demo tenants (e.g. "Internal / demo"): nobody pays, so the Me tab hides it. */
+export const isComplimentary = (plan: Pick<Plan, 'name'>) =>
+  /internal|demo|complimentary/i.test(plan.name);
+
 export type MeData = {
   site: string;
   /** Undefined while the subscription loads (or when it can't be read). */

@@ -97,7 +97,8 @@ describe('signed-in screens', () => {
 
   it.each([
     ['/me', 'Offline downloads'],
-    ['/knowledge', 'Your brands'],
+    ['/knowledge', 'D10T Service Manual'],
+    ['/knowledge/read/d10t-service-manual', 'Service procedures for the D10T dozer.'],
     ['/knowledge/brand/cat', 'Machine maintenance'],
     ['/knowledge/brand/nope', 'You do not have access to this content'],
     ['/knowledge/category/cat-maint', 'D10T Service Manual'],
@@ -109,7 +110,7 @@ describe('signed-in screens', () => {
     ],
     ['/document/missing-doc', 'Document not found'],
     ['/offline-sync', 'Saved documents'],
-    ['/machine/HT-2201/compare', 'Serial no.'],
+    ['/machine/HT-2201/compare', 'Main pump'],
     ['/cases', "Brake pressure alarm won't clear"],
     ['/billing', '142 / 500 queries'],
     ['/delete-account', 'Type DELETE to confirm'],
@@ -118,9 +119,9 @@ describe('signed-in screens', () => {
     ['/case/1042', 'Checking pump firmware version.'],
     ['/notifications', 'Manual update available'],
     ['/machines', 'CAT 793F · 14,208 h'], // starts on the user's own site
-    ['/machine/HT-2201', 'S/N 4GZ01288'],
+    ['/machine/HT-2201', 'PLANT ID'],
     ['/machine/HT-2201/history', 'E-2204 · accumulator pre-charge low'],
-    ['/machine/HT-2201/configuration', 'Hydraulic pump: 4T-9410 → 4T-9455'],
+    ['/machine/HT-2201/configuration', 'Component replaced · System'],
     ['/machine/HT-2201/manuals', 'Rear suspension cylinder recharge'],
     ['/machine/XX-0000', 'Machine not found'],
     ['/ask-ai', 'Ask about a fault, part or procedure'],

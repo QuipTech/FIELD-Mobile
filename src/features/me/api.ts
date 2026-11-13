@@ -7,6 +7,7 @@ import type { CurrentUser } from '@/auth/useCurrentUser';
 import { queryClient } from '@/lib/queryClient';
 import { http } from '@/lib/http';
 import type { Plan, PlanStatus } from './data';
+import type { AvatarFile } from './pickAvatar';
 
 /** Subscription and team size (Backend API Reference §5). Billing lives in features/billing. */
 
@@ -93,6 +94,49 @@ export type ProfilePatch = Partial<{
   /** e.g. `en` or `en-AU`. */
   language: string;
 }>;
+
+const avatarResponse = z
+  .union([
+    z.object({ avatarUrl: z.string() }).loose(),
+    z.object({ user: z.object({ avatarUrl: z.string() }).loose() }).transform((r) => r.user),
+    z.object({ data: z.object({ avatarUrl: z.string() }).loose() }).transform((r) => r.data),
+  ])
+  .transform((r) => r.avatarUrl);
+
+function setAvatarUrl(avatarUrl: string) {
+  queryClient.setQueryData<CurrentUser>(['currentUser'], (user) =>
+    user ? { ...user, avatarUrl } : user,
+  );
+  useAccess.setState((state) => ({
+    profile: state.profile ? { ...state.profile, avatarUrl } : null,
+  }));
+}
+
+/**
+ * Replaces the profile photo (`POST /users/me/avatar`, multipart `file`).
+ * TODO(api): confirm the field name and response; we read `avatarUrl` if it is returned and
+ * otherwise pick it up from `/auth/me`.
+ */
+export function useUploadAvatar() {
+  return useMutation({
+    mutationFn: (file: AvatarFile) => {
+      const form = new FormData();
+      // React Native's FormData takes a file descriptor object for local files.
+      form.append('file', file as never);
+      return http.post('/users/me/avatar', form, { retry: false });
+    },
+    onSuccess: async (response) => {
+      const parsed = avatarResponse.safeParse(response);
+      if (parsed.success) {
+        setAvatarUrl(parsed.data);
+        const session = await getApiSession();
+        if (session) await updateApiUser({ ...session.user, avatarUrl: parsed.data });
+      }
+      // Also stores the new avatarUrl in the API session (shown by Home, Me and the drawer).
+      await refreshAccess();
+    },
+  });
+}
 
 /** Updates the profile (`PATCH /users/me`); only the fields sent change. */
 export function useUpdateProfile(onSaved?: () => void) {

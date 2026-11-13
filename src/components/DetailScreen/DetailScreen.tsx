@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '@/theme';
@@ -14,16 +21,32 @@ export type DetailScreenProps = {
    * Routes pass `useHeaderHeight()`; leave unset otherwise.
    */
   keyboardOffset?: number;
+  /** Fixed above the scrolling content (e.g. a sticky search bar). */
+  header?: ReactNode;
+  /** Pull to refresh, for screens that list things. */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 };
 
 /** Canvas + mesh shell for screens pushed over the tabs (white native header on top). */
-export function DetailScreen({ children, footer, keyboardOffset }: DetailScreenProps) {
+export function DetailScreen({
+  children,
+  footer,
+  keyboardOffset,
+  header,
+  onRefresh,
+  refreshing = false,
+}: DetailScreenProps) {
   const insets = useSafeAreaInsets();
   const body = (
     <>
+      {header && <View style={styles.header}>{header}</View>}
       <ScrollView
         contentContainerStyle={[styles.content, !footer && { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+        }
       >
         {children}
       </ScrollView>
@@ -54,5 +77,6 @@ export function DetailScreen({ children, footer, keyboardOffset }: DetailScreenP
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, gap: 14 },
+  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   footer: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm },
 });

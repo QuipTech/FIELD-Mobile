@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { http } from '@/lib/http';
-import type { Machine, MachineStatus } from './data';
+import type { Machine, MachineLifecycle, MachineStatus } from './data';
 import type { EntryType, TimelineEntry } from './records';
 
 /**
@@ -14,34 +14,51 @@ const apiMachine = z.object({
   id: z.string(),
   label: z.string().nullish(),
   fleetNumber: z.string().nullish(),
+  plantId: z.string().nullish(),
+  assetNumber: z.string().nullish(),
   serialNumber: z.string(),
   manufacturer: z.string().nullish(),
   model: z.string().nullish(),
+  modelId: z.string().nullish(),
   site: z.string().nullish(),
   operatingHours: z.number().nullish(),
   status: z.string(),
   photoUrl: z.string().nullish(),
+  photoUrls: z.array(z.string()).nullish(),
+  lifecycleState: z.string().nullish(),
   assignedTechnicians: z.array(z.unknown()).nullish(),
+  groups: z
+    .array(z.object({ id: z.string(), name: z.string(), colour: z.string().nullish() }))
+    .nullish()
+    .catch(null),
 });
 export type ApiMachine = z.infer<typeof apiMachine>;
 
 const machinePage = z.object({ items: z.array(apiMachine), total: z.number() });
 
 const STATUS: Record<string, MachineStatus> = { running: 'ok', down: 'down', service_due: 'due' };
+const LIFECYCLES: readonly string[] = ['registered', 'active', 'archived', 'sold'];
 
 export function toMachine(m: ApiMachine): Machine {
   const make = m.manufacturer ?? '';
   return {
     id: m.id,
-    label: m.fleetNumber || m.label || m.serialNumber,
+    label: m.plantId || m.fleetNumber || m.label || m.serialNumber,
+    plantId: m.plantId || m.assetNumber || undefined,
     make,
     model: [make, m.model].filter(Boolean).join(' '),
     status: STATUS[m.status] ?? 'ok',
     site: m.site ?? '',
     hours: m.operatingHours ?? undefined,
     serial: m.serialNumber,
-    photoUrl: m.photoUrl ?? undefined,
+    modelId: m.modelId ?? undefined,
+    photoUrl: m.photoUrl ?? m.photoUrls?.[0] ?? undefined,
     technicianCount: m.assignedTechnicians?.length,
+    groups: m.groups?.map((g) => ({ id: g.id, name: g.name, colour: g.colour ?? null })),
+    lifecycle:
+      m.lifecycleState && LIFECYCLES.includes(m.lifecycleState)
+        ? (m.lifecycleState as MachineLifecycle)
+        : undefined,
   };
 }
 
@@ -56,14 +73,17 @@ const PAGE_SIZE = 100;
 const MAX_PAGES = 20;
 
 /** The whole fleet (every page), so search, filters and asset-tag scans work offline. */
-export function useMachines() {
+export function useMachines(groupId?: string) {
   return useQuery({
-    queryKey: machineKeys.all,
+    // A group's machines live under the fleet key, so every machine change refreshes them too.
+    queryKey: groupId ? [...machineKeys.all, 'group', groupId] : machineKeys.all,
     queryFn: async () => {
       const items: ApiMachine[] = [];
       for (let page = 1; page <= MAX_PAGES; page++) {
         const res = machinePage.parse(
-          await http.get('/machines', { query: { page, pageSize: PAGE_SIZE } }),
+          await http.get('/machines', {
+            query: { page, pageSize: PAGE_SIZE, ...(groupId && { groupId }) },
+          }),
         );
         items.push(...res.items);
         if (items.length >= res.total || res.items.length < PAGE_SIZE) break;

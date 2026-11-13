@@ -1,11 +1,13 @@
-import { Plus, ScanLine } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { Plus } from 'lucide-react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/PressableScale/PressableScale';
 import { SearchField } from '@/components/SearchField/SearchField';
 import { DrawerMenuButton } from '@/features/navigation/DrawerMenu';
 import { colors } from '@/theme';
 import type { Machine } from './data';
 import { styles } from './styles';
+import { AnimatedScanIcon } from './AnimatedScanIcon';
 
 /** Search field, scan button and (admins only) the add-machine button. */
 export function SearchBar({
@@ -25,23 +27,23 @@ export function SearchBar({
     <View style={[styles.searchBar, { paddingTop: topInset + 8 }]}>
       <DrawerMenuButton />
       <SearchField value={query} onChange={onQuery} label="Search assets" style={styles.search} />
-      <Pressable
+      <PressableScale
         onPress={onScan}
         style={({ pressed }) => [styles.scan, pressed && styles.scanPressed]}
         accessibilityRole="button"
         accessibilityLabel="Scan asset tag"
       >
-        <ScanLine size={22} color={colors.onAccent} strokeWidth={2} />
-      </Pressable>
+        <AnimatedScanIcon />
+      </PressableScale>
       {onAddMachine && (
-        <Pressable
+        <PressableScale
           onPress={onAddMachine}
-          style={({ pressed }) => [styles.add, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.add, pressed && styles.addPressed]}
           accessibilityRole="button"
           accessibilityLabel="Add machine"
         >
-          <Plus size={22} color={colors.ink} strokeWidth={2} />
-        </Pressable>
+          <Plus size={25} color={colors.brand} strokeWidth={2.2} />
+        </PressableScale>
       )}
     </View>
   );

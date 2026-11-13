@@ -17,6 +17,11 @@ const DATA: HomeData = {
   uptime: null,
   machines: [{ id: 'm1', title: 'DZ-07 · CAT D10T', detail: 'Pit 3 · 12,480 h', status: 'due' }],
   recent: [],
+  stats: {
+    openCases: { total: 2, breachingSla: 1 },
+    machinesDown: { total: 1, labels: ['DZ-07'] },
+    entriesThisWeek: { total: 5, mine: 3 },
+  },
 };
 
 const setup = async (overrides: Partial<HomeProps> = {}) => {
@@ -31,7 +36,6 @@ const setup = async (overrides: Partial<HomeProps> = {}) => {
     onSeeAll: jest.fn(),
     onOpenMachine: jest.fn(),
     onSearch: jest.fn(),
-    onAskAi: jest.fn(),
     onScan: jest.fn(),
     onLogEntry: jest.fn(),
     ...overrides,
@@ -45,14 +49,13 @@ const setup = async (overrides: Partial<HomeProps> = {}) => {
 };
 
 describe('Home', () => {
-  it('offers the three H1 quick actions and no separate Capture tile', async () => {
+  it('offers Scan and Log entry, leaving Ask AI to the tab bar', async () => {
     const props = await setup();
     await fireEvent.press(screen.getByRole('button', { name: 'Scan machine' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Log entry' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask AI' }));
     expect(props.onScan).toHaveBeenCalledTimes(1);
     expect(props.onLogEntry).toHaveBeenCalledTimes(1);
-    expect(props.onAskAi).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Ask AI' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Capture' })).toBeNull();
   });
 
@@ -63,7 +66,7 @@ describe('Home', () => {
     expect(screen.getByText('My machines')).toBeTruthy();
     expect(screen.getByText('My open cases')).toBeTruthy();
     expect(screen.queryByText('Team activity')).toBeNull();
-    expect(screen.queryByText('Machines down')).toBeNull();
+    expect(screen.queryByText('Needs attention')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: new RegExp(`Case ${openCase.id}`) }));
     expect(onOpenCase).toHaveBeenCalledWith(openCase.id);
   });
@@ -76,5 +79,59 @@ describe('Home', () => {
     expect(screen.queryByText('My machines')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: '3 Machines down' }));
     expect(onOpenKpi).toHaveBeenCalledWith('machinesDown');
+  });
+
+  it('shows admins the platform overview instead of their site and machines', async () => {
+    const onOpenAuditLog = jest.fn();
+    await setup({
+      isAdmin: true,
+      admin: SAMPLE_ADMIN_HOME,
+      onOpenAuditLog,
+      overview: {
+        scope: { isPlatform: true, organisationCount: 3, siteCount: 12 },
+        users: { active: 42, invited: 2 },
+        documents: { indexed: 1280, searchablePagePercent: 97 },
+        assets: { total: 310, modelCount: 40 },
+        ingestionQueue: [
+          { id: 'q1', title: 'D10T Shop Manual', state: 'failed', errorMessage: 'No text layer' },
+        ],
+        latestActions: [
+          {
+            id: 'a1',
+            actionLabel: 'Role changed',
+            target: 'Sam Lee',
+            occurredAt: new Date().toISOString(),
+            actor: { name: 'Jo Okoye' },
+          },
+        ],
+      },
+    });
+    expect(screen.getByText('All organisations · 3 organisations · 12 sites')).toBeTruthy();
+    expect(screen.queryByText(/Pit 3/)).toBeNull();
+    expect(screen.getByLabelText('42 Active users')).toBeTruthy();
+    expect(screen.getByLabelText('1,280 Documents indexed')).toBeTruthy();
+    expect(screen.getByLabelText('310 Assets in library')).toBeTruthy();
+    expect(screen.getByText('D10T Shop Manual')).toBeTruthy();
+    expect(screen.getByText('Failed')).toBeTruthy();
+    expect(screen.getByText('Role changed · Sam Lee')).toBeTruthy();
+    expect(screen.queryByText('Team activity')).toBeNull();
+    await fireEvent.press(screen.getByRole('link', { name: 'Audit log' }));
+    expect(onOpenAuditLog).toHaveBeenCalled();
+  });
+
+  it('shows a customer open cases, machines down and entries this week under the search', async () => {
+    const props = await setup({ onSeeAllCases: jest.fn() });
+    expect(screen.getByText('1 breaching SLA')).toBeTruthy();
+    expect(screen.getByText('DZ-07')).toBeTruthy();
+    expect(screen.getByText('3 logged by you')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: /^Open cases: 2/ }));
+    expect(props.onSeeAllCases).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: /^Machines down: 1/ }));
+    expect(props.onSeeAll).toHaveBeenCalled();
+  });
+
+  it('keeps the customer tiles off the admin home', async () => {
+    await setup({ isAdmin: true, admin: SAMPLE_ADMIN_HOME });
+    expect(screen.queryByText('3 logged by you')).toBeNull();
   });
 });

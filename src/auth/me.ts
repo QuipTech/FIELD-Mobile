@@ -83,6 +83,19 @@ const meUser = z
       })
       .nullish(),
     tenant: z.object({ id: z.string(), name: z.string(), slug: z.string().nullish() }).nullish(),
+    accessibleGroups: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            colour: z.string().nullish(),
+            accessLevel: z.string().nullish(),
+          })
+          .loose(),
+      )
+      .nullish()
+      .catch(null),
   })
   .loose();
 
@@ -94,11 +107,20 @@ export const meResponse = z.union([
   meUser,
 ]);
 
+/** A machine group shared with the user (or their organisation). */
+export type AccessibleGroup = {
+  id: string;
+  name: string;
+  colour: string | null;
+  accessLevel: 'view' | 'contribute';
+};
+
 export type Me = {
   roles: string[];
   permissions: string[];
   capabilities: Capabilities;
   profile: MeProfile | null;
+  accessibleGroups: AccessibleGroup[];
 };
 
 export function toMe(raw: unknown): Me {
@@ -107,6 +129,12 @@ export function toMe(raw: unknown): Me {
     roles: u.roles,
     permissions: u.permissions,
     capabilities: capabilitiesFrom(u.permissions, u.capabilities),
+    accessibleGroups: (u.accessibleGroups ?? []).map((g) => ({
+      id: g.id,
+      name: g.name,
+      colour: g.colour ?? null,
+      accessLevel: g.accessLevel === 'contribute' ? 'contribute' : 'view',
+    })),
     profile:
       u.id && u.email
         ? {

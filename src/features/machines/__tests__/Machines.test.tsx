@@ -8,6 +8,9 @@ import { SAMPLE_MACHINES } from '@/test/fixtures/machines/fleet';
 import { MachineDetail } from '../MachineDetail';
 import { MachinesList } from '../MachinesList';
 import { HT_2201_RECORDS } from '@/test/fixtures/machines/records';
+import * as Clipboard from 'expo-clipboard';
+
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(() => Promise.resolve(true)) }));
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -38,6 +41,27 @@ describe('MachinesList', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: /^HT-2201\./ }));
     expect(props.onOpenMachine).toHaveBeenCalledWith('HT-2201');
+  });
+
+  it('tags machines that are not activated or archived, but not active ones', async () => {
+    const fleet: Machine[] = [
+      { ...HT_2201, lifecycle: 'active' },
+      { ...HT_2201, id: 'x2', label: 'HT-9001', lifecycle: 'registered' },
+      { ...HT_2201, id: 'x3', label: 'HT-9002', lifecycle: 'archived' },
+    ];
+    await renderScreen(
+      <MachinesList
+        machines={fleet}
+        homeSite="all"
+        onScan={jest.fn()}
+        onNearMe={jest.fn()}
+        onOpenMachine={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Not activated')).toBeTruthy();
+    expect(screen.getByText('Archived')).toBeTruthy();
+    expect(screen.queryByText('Active')).toBeNull();
+    expect(screen.getByRole('button', { name: /^HT-9001\..*Not activated/ })).toBeTruthy();
   });
 
   it('searches and filters by status, with a way back from no results', async () => {
@@ -102,13 +126,23 @@ describe('MachineDetail', () => {
 
   it('shows specs and components', async () => {
     const props = await setup();
-    expect(screen.getByText('S/N 4GZ01288')).toBeTruthy();
+    expect(screen.queryByText('4GZ01288')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Show serial' }));
+    expect(screen.getByText('4GZ01288')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Hide serial' }));
+    expect(screen.queryByText('4GZ01288')).toBeNull();
     expect(screen.getByText('Pit 4 · Bench 3')).toBeTruthy();
     expect(screen.getByText('Fault E-2204')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Hydraulics, 12 components' }));
     expect(props.onOpenComponent).toHaveBeenCalledWith('hydraulics');
     await fireEvent.press(screen.getByRole('button', { name: 'Ask AI' }));
     expect(props.onAskAi).toHaveBeenCalledTimes(1);
+  });
+
+  it('copies the serial', async () => {
+    await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy serial number' }));
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith('4GZ01288');
   });
 
   it('hides assigned technicians from technicians', async () => {

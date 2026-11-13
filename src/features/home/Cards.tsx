@@ -8,7 +8,7 @@ import { colors } from '@/theme';
 import type { AssignedMachine, HomeData, MachineStatus, RecentEntry } from './data';
 import { styles } from './styles';
 
-const CHART_HEIGHT = 56;
+const CHART_HEIGHT = 36;
 
 /** Fleet uptime card with a sparkline scaled to the weekly values' range. */
 export function UptimeCard({ uptime }: { uptime: NonNullable<HomeData['uptime']> }) {
@@ -27,19 +27,23 @@ export function UptimeCard({ uptime }: { uptime: NonNullable<HomeData['uptime']>
 
   return (
     <View
-      style={styles.card}
+      style={[styles.card, styles.uptime]}
       accessible
       accessibilityLabel={`Fleet uptime ${uptime.percent}% over ${uptime.weeks} weeks`}
     >
-      <View style={styles.baselineRow}>
+      <View style={styles.uptimeText}>
         <Text style={styles.overline} color="inkMuted">
           Fleet uptime
         </Text>
+        <Text style={styles.uptimeValue}>{uptime.percent}%</Text>
         <Text variant="caption" color="inkMuted">
-          {uptime.percent}% · {uptime.weeks} wks
+          Last {uptime.weeks} weeks
         </Text>
       </View>
-      <View style={{ height: CHART_HEIGHT }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <View
+        style={[styles.uptimeChart, { height: CHART_HEIGHT }]}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      >
         {width > 0 && (
           <Svg width={width} height={CHART_HEIGHT}>
             <Polyline

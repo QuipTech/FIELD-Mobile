@@ -69,6 +69,13 @@ describe('Me', () => {
     expect(screen.getByText(/Version 1\.0\.0/)).toBeTruthy();
   });
 
+  it('hides an internal/demo plan nobody pays for', async () => {
+    const plan = { ...SAMPLE_ME.plan!, name: 'Internal / demo' };
+    await setup({ plan }, true, { team: SAMPLE_TEAM });
+    expect(screen.queryByText('Internal / demo')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Billing & plan, 42 assets' })).toBeTruthy();
+  });
+
   it('shows a technician their plan, managed by the admin', async () => {
     await setup();
     expect(screen.queryByRole('button', { name: /^Team & roles/ })).toBeNull();

@@ -37,6 +37,20 @@ const DETAIL_SCREENS = {
   'delete-account': 'Delete account',
   'team-invite': 'Invite',
   'notifications/index': 'Notifications',
+  // Platform admin (QuipTech staff).
+  'admin/users': 'Users',
+  'admin/roles/index': 'Roles & permissions',
+  'admin/roles/[id]': 'Role',
+  'admin/audit-log': 'Audit log',
+  'admin/billing': 'Billing',
+  'admin/demo-requests/index': 'Demo requests',
+  'admin/demo-requests/[id]': 'Demo request',
+  'admin/ai-configuration': 'AI configuration',
+  'admin/machine-library/index': 'Machine library',
+  'admin/machine-library/[id]': 'Machine model',
+  'admin/machine-groups/index': 'Machine groups',
+  'admin/machine-groups/[id]/index': 'Machine group',
+  'admin/machine-groups/[id]/add-machines': 'Add machines',
   // The machine screens set their own titles.
   'machine/[id]/index': 'Machine',
   'machine/[id]/history': 'History',
@@ -45,8 +59,10 @@ const DETAIL_SCREENS = {
   'document/[id]': 'Document',
   'knowledge/brand/[id]': 'Knowledge',
   'knowledge/category/[id]': 'Category',
+  'knowledge/read/[id]': 'Document',
   'machine/[id]/compare': 'Compare snapshots',
   'machine/[id]/edit': 'Edit machine',
+  'machine/[id]/delete': 'Delete machine',
   'machine/[id]/system/[systemId]': 'Components',
 };
 
@@ -65,6 +81,7 @@ const PAYMENT_GATE = {
   gestureEnabled: false,
   contentStyle: { backgroundColor: 'transparent' },
 } as const;
+const STRIPE_RETURN = { ...PAYMENT_GATE, animation: 'none', gestureEnabled: true } as const;
 const FADE = { headerShown: false, animation: 'fade' } as const;
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -135,11 +152,10 @@ function RootStack() {
             <Stack.Screen name="capture-photo" options={CAMERA_SCREEN} />
             <Stack.Screen name="knowledge/search" options={FADE} />
             <Stack.Screen name="payment-required" options={PAYMENT_GATE} />
-            {/* Stripe's return link on Android: closes itself straight away. */}
-            <Stack.Screen
-              name="billing-return"
-              options={{ ...PAYMENT_GATE, animation: 'none', gestureEnabled: true }}
-            />
+            {/* Stripe return links (hosted pages, Payment Sheet 3-D Secure): close straight away. */}
+            {(['billing-return', 'stripe-redirect'] as const).map((name) => (
+              <Stack.Screen key={name} name={name} options={STRIPE_RETURN} />
+            ))}
           </Stack.Protected>
           <Stack.Protected guard={status === 'profileRequired'}>
             <Stack.Screen name="complete-profile" options={BARE} />

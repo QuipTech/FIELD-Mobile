@@ -16,6 +16,10 @@ jest.mock('expo-router/drawer', () => ({
 jest.mock('@/auth/useCurrentUser', () => ({
   useCurrentUser: () => ({ data: { firstName: 'Jo', lastName: 'Okoye', email: 'jo@example.com' } }),
 }));
+let mockPlatformAdmin = false;
+jest.mock('@/auth/useRole', () => ({
+  useRole: () => ({ capabilities: { isPlatformAdmin: mockPlatformAdmin } }),
+}));
 jest.mock('@/auth/confirmSignOut', () => ({ confirmSignOut: jest.fn() }));
 jest.mock('@/features/support/links', () => ({ rateApp: jest.fn() }));
 
@@ -73,10 +77,36 @@ it('opens the shared drawer from a labelled menu button', async () => {
 
 it('closes the drawer before showing the shared sign-out confirmation', async () => {
   await setup();
-  await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Log out' }));
   expect(closeDrawer).toHaveBeenCalledTimes(1);
   expect(confirmSignOut).toHaveBeenCalledTimes(1);
   expect(closeDrawer.mock.invocationCallOrder[0]).toBeLessThan(
     jest.mocked(confirmSignOut).mock.invocationCallOrder[0]!,
   );
+});
+
+describe('Administration', () => {
+  afterEach(() => {
+    mockPlatformAdmin = false;
+  });
+
+  it('is hidden from everyone but platform admins', async () => {
+    await setup();
+    expect(screen.queryByText('Administration')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Audit log' })).toBeNull();
+  });
+
+  it.each([
+    ['Users', '/admin/users'],
+    ['Roles & permissions', '/admin/roles'],
+    ['Audit log', '/admin/audit-log'],
+    ['Billing', '/admin/billing'],
+    ['Demo requests', '/admin/demo-requests'],
+    ['AI configuration', '/admin/ai-configuration'],
+  ])('opens %s for platform admins', async (label, path) => {
+    mockPlatformAdmin = true;
+    await setup();
+    await fireEvent.press(screen.getByRole('button', { name: label }));
+    expect(router.navigate).toHaveBeenCalledWith(path);
+  });
 });

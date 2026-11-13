@@ -4,7 +4,14 @@ import { create } from 'zustand';
 import { ApiError, http } from '@/lib/http';
 import { queryClient } from '@/lib/queryClient';
 import { getApiSession, onAccessTokenRefreshed, updateApiUser, type ApiUser } from './apiSession';
-import { capabilitiesFrom, toMe, type Capabilities, type Me, type MeProfile } from './me';
+import {
+  capabilitiesFrom,
+  toMe,
+  type AccessibleGroup,
+  type Capabilities,
+  type Me,
+  type MeProfile,
+} from './me';
 import { useSession } from './session';
 
 /**
@@ -19,10 +26,18 @@ type AccessState = {
   capabilities: Capabilities;
   /** From the last `GET /auth/me`; null until it has been fetched. */
   profile: MeProfile | null;
+  /** Machine groups shared with the user; empty until `/auth/me` returns. */
+  accessibleGroups: AccessibleGroup[];
   loaded: boolean;
 };
 
-const EMPTY = { roles: [], permissions: [], capabilities: capabilitiesFrom([]), profile: null };
+const EMPTY: Omit<AccessState, 'loaded'> = {
+  roles: [],
+  permissions: [],
+  capabilities: capabilitiesFrom([]),
+  profile: null,
+  accessibleGroups: [],
+};
 
 export const useAccess = create<AccessState>(() => ({ ...EMPTY, loaded: false }));
 
@@ -33,6 +48,7 @@ function setAccess(user: Pick<ApiUser, 'roles' | 'permissions'>, me?: Me) {
     permissions,
     capabilities: me?.capabilities ?? capabilitiesFrom(permissions),
     profile: me?.profile ?? s.profile,
+    accessibleGroups: me?.accessibleGroups ?? s.accessibleGroups,
     loaded: true,
   }));
 }

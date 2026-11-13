@@ -1,20 +1,20 @@
 import { SearchX, Truck } from 'lucide-react-native';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BrandCard } from '@/components/BrandCard/BrandCard';
 import { EmptyPanel } from '@/components/EmptyPanel/EmptyPanel';
 import { ErrorState } from '@/components/ErrorState/ErrorState';
 import { APP_MESH, MeshBackground } from '@/components/MeshBackground/MeshBackground';
-import { Pill } from '@/components/Pill/Pill';
 import { SkeletonList } from '@/components/Skeleton/SkeletonList';
 import { Text } from '@/components/Text/Text';
-import { formatHours } from '@/lib/format';
-import { MACHINE_STATUS, searchMachines, type Machine } from './data';
+import { useTabBarSpace } from '@/features/navigation/tabBarSpace';
+import { spacing, useTheme } from '@/theme';
+import { searchMachines, type Machine } from './data';
+import { GroupFilter, type GroupOption } from './GroupFilter';
 import { MachineFilters, type Filters } from './MachineFilters';
-import { MachineIcon } from './MachineParts';
 import { scopeLine, SearchBar } from './MachineSearchBar';
+import { MachineRow } from './MachineRow';
 import { styles } from './styles';
 
 export type MachinesListProps = {
@@ -27,12 +27,18 @@ export type MachinesListProps = {
   /** Load failed and nothing is cached: shown with a retry. */
   error?: unknown;
   onRetry?: () => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
   onScan: () => void;
   /** Admins see the whole fleet and can add machines; technicians see their sites only. */
   isAdmin?: boolean;
   onAddMachine?: () => void;
   onNearMe: () => void;
   onOpenMachine: (id: string) => void;
+  /** Machine groups shared with the user; a chip row filters by one (`GET /machines?groupId`). */
+  groups?: GroupOption[];
+  groupId?: string;
+  onGroup?: (id?: string) => void;
 };
 
 /** M3 Machine search & filter (the Machines tab). */
@@ -45,17 +51,14 @@ export function MachinesList({
   ...props
 }: MachinesListProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const tabBar = useTabBarSpace();
   const [query, setQuery] = useState('');
   const initial: Filters = { site: homeSite, make: 'all', status: 'all' };
   const [filters, setFilters] = useState(initial);
   const update = (patch: Partial<Filters>) => setFilters((f) => ({ ...f, ...patch }));
 
-  const visible = searchMachines(machines, query).filter(
-    (m) =>
-      (filters.site === 'all' || m.site === filters.site) &&
-      (filters.make === 'all' || m.make === filters.make) &&
-      (filters.status === 'all' || m.status === filters.status),
-  );
+  const visible = filteredMachines(machines, query, filters);
 
   return (
     <View style={styles.root}>
@@ -69,10 +72,27 @@ export function MachinesList({
       />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: tabBar + spacing.md },
+        ]}
+        alwaysBounceVertical
+        refreshControl={
+          props.onRefresh ? (
+            <RefreshControl
+              refreshing={!!props.refreshing}
+              onRefresh={props.onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          ) : undefined
+        }
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
+        {props.groups && props.onGroup && (
+          <GroupFilter groups={props.groups} value={props.groupId} onChange={props.onGroup} />
+        )}
         <MachineFilters
           machines={machines}
           filters={filters}
@@ -101,6 +121,15 @@ export function MachinesList({
         )}
       </ScrollView>
     </View>
+  );
+}
+
+function filteredMachines(machines: Machine[], query: string, filters: Filters) {
+  return searchMachines(machines, query).filter(
+    (m) =>
+      (filters.site === 'all' || m.site === filters.site) &&
+      (filters.make === 'all' || m.make === filters.make) &&
+      (filters.status === 'all' || m.status === filters.status),
   );
 }
 
@@ -152,35 +181,5 @@ function ListBody({
         />
       ))}
     </>
-  );
-}
-
-function MachineRow({
-  machine: m,
-  showSite,
-  onPress,
-}: {
-  machine: Machine;
-  showSite: boolean;
-  onPress: () => void;
-}) {
-  const status = MACHINE_STATUS[m.status];
-  const place = showSite ? m.site : m.bench;
-  const caption = [m.model, place, m.hours !== undefined ? formatHours(m.hours) : undefined]
-    .filter(Boolean)
-    .join(' · ');
-  return (
-    <BrandCard onPress={onPress} accessibilityLabel={`${m.label}. ${caption}. ${status.label}`}>
-      <View style={styles.row}>
-        <MachineIcon status={m.status} />
-        <View style={styles.rowText}>
-          <Text style={styles.rowTitle}>{m.label}</Text>
-          <Text variant="caption" color="inkMuted" numberOfLines={1}>
-            {caption}
-          </Text>
-        </View>
-        <Pill label={status.label} tone={status.tone} />
-      </View>
-    </BrandCard>
   );
 }

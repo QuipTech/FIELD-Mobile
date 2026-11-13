@@ -1,11 +1,4 @@
-import {
-  Download,
-  GitCompareArrows,
-  History,
-  Plus,
-  RotateCcw,
-  Settings2,
-} from 'lucide-react-native';
+import { Download, History, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { BrandButton } from '@/components/BrandButton/BrandButton';
@@ -134,57 +127,6 @@ export function MachineTimeline({
         />
       ) : (
         <HistoryRows entries={visible} onOpenPhoto={onOpenPhoto} onAddPhotos={onAddPhotos} />
-      )}
-    </DetailScreen>
-  );
-}
-
-/** M5.5 Configuration history: part swaps, firmware and bulletins applied. */
-export function ConfigurationTimeline({
-  changes,
-  onCompare,
-  onRestore,
-}: {
-  changes: ConfigChange[];
-  /** Opens M5b with the previous snapshot against the latest. */
-  onCompare?: () => void;
-  /** Admin only: roll the machine back to an earlier snapshot. */
-  onRestore?: () => void;
-}) {
-  const compare = onCompare && changes.length > 1;
-  const restore = onRestore && changes.length > 0;
-  return (
-    <DetailScreen
-      footer={
-        compare || restore ? (
-          <View style={styles.footerStack}>
-            {compare && (
-              <BrandButton
-                label="Compare snapshots"
-                icon={<GitCompareArrows size={18} color={colors.onAccent} strokeWidth={2} />}
-                onPress={onCompare}
-              />
-            )}
-            {restore && (
-              <BrandButton
-                variant="outline"
-                label="Restore a snapshot"
-                icon={<RotateCcw size={18} color={colors.ink} strokeWidth={2} />}
-                onPress={onRestore}
-              />
-            )}
-          </View>
-        ) : undefined
-      }
-    >
-      {changes.length === 0 ? (
-        <EmptyPanel
-          icon={Settings2}
-          title="No configuration changes"
-          message="Part swaps, firmware updates and bulletins applied to this machine appear here."
-        />
-      ) : (
-        <ConfigRows changes={changes} />
       )}
     </DetailScreen>
   );

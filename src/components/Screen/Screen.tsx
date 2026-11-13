@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { useTheme } from '@/theme';
+import { useTabBarSpace } from '@/features/navigation/tabBarSpace';
+import { spacing, useTheme } from '@/theme';
 import { useStyles } from './styles';
 
 export type ScreenProps = {
@@ -23,11 +24,16 @@ export function Screen({
 }: ScreenProps) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const tabBar = useTabBarSpace();
   return (
     <SafeAreaView style={styles.root} edges={edges}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={[styles.content, styles.grow]}
+          contentContainerStyle={[
+            styles.content,
+            styles.grow,
+            tabBar > 0 && { paddingBottom: tabBar + spacing.md },
+          ]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             refresh.onRefresh ? (

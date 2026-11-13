@@ -1,12 +1,14 @@
 import { ChevronRight, X, type LucideIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Avatar } from '@/components/Avatar/Avatar';
 import { IconButton } from '@/components/Button/IconButton';
 import { Text } from '@/components/Text/Text';
 import { useTheme } from '@/theme';
 import { useDrawerStyles } from './drawerStyles';
+import { useHeroMotion } from './useHeroMotion';
 
 export function DrawerHero({
   name,
@@ -20,10 +22,11 @@ export function DrawerHero({
   onClose: () => void;
 }) {
   const styles = useDrawerStyles();
+  const motion = useHeroMotion();
   return (
     <View style={styles.hero}>
-      <View style={styles.orb} pointerEvents="none" />
-      <View style={styles.ring} pointerEvents="none" />
+      <Animated.View style={[styles.orb, motion.orbStyle]} pointerEvents="none" />
+      <Animated.View style={[styles.ring, motion.ringStyle]} pointerEvents="none" />
       <View style={styles.heading}>
         <View style={styles.brand}>
           <Text variant="caption" color="onBrandMuted">

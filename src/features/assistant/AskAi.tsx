@@ -13,6 +13,8 @@ import { formatShortDate } from '@/lib/date';
 import { formatUsage } from '@/lib/format';
 import { colors } from '@/theme';
 import { ChatBubble, type AnswerActions } from './ChatMessages';
+import { useTabBarSpace } from '@/features/navigation/tabBarSpace';
+import { useKeyboardVisible } from '@/lib/useKeyboardVisible';
 import { Composer } from './Composer';
 import { SUGGESTIONS, type AiUsage, type ChatMessage } from './data';
 import { styles } from './styles';
@@ -55,6 +57,10 @@ export function AskAi({
 }: AskAiProps) {
   const [draft, setDraft] = useState(prompt ?? '');
   const scroll = useRef<ScrollView>(null);
+  const tabBar = useTabBarSpace();
+  const keyboard = useKeyboardVisible();
+  // Clear the floating tab bar; on iOS the keyboard covers the bar, so sit on the keyboard instead.
+  const composerGap = Platform.OS === 'ios' && keyboard ? 0 : tabBar;
   // A new prompt (e.g. "Ask AI about this" again) replaces the draft.
   const [lastPrompt, setLastPrompt] = useState(prompt);
   if (prompt !== lastPrompt) {
@@ -110,14 +116,16 @@ export function AskAi({
           messages.map((m) => <ChatBubble key={m.id} message={m} showReview={isAdmin} {...props} />)
         )}
       </ScrollView>
-      <Composer
-        value={draft}
-        onChange={setDraft}
-        onSend={send}
-        onAttach={props.onAttach}
-        image={props.image}
-        onRemoveImage={props.onRemoveImage}
-      />
+      <View style={{ paddingBottom: composerGap }}>
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSend={send}
+          onAttach={props.onAttach}
+          image={props.image}
+          onRemoveImage={props.onRemoveImage}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }

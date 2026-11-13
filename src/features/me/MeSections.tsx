@@ -19,7 +19,7 @@ import type { BiometricSupport } from '@/auth/biometrics';
 import { GroupedList, GroupedRow } from '@/components/GroupedList/GroupedList';
 import { Text } from '@/components/Text/Text';
 import { formatNumber } from '@/lib/format';
-import type { MeData, TeamSummary } from './data';
+import { isComplimentary, type MeData, type TeamSummary } from './data';
 import { styles } from './styles';
 
 export type MeDestination =
@@ -166,7 +166,16 @@ function AccountSection({
           <GroupedRow
             icon={CreditCard}
             label="Billing & plan"
-            value={data.plan ? `${planName} · ${formatNumber(data.plan.assets)} assets` : undefined}
+            value={
+              data.plan
+                ? [
+                    isComplimentary(data.plan) ? '' : planName,
+                    `${formatNumber(data.plan.assets)} assets`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : undefined
+            }
             onPress={go('billing')}
           />
         </GroupedList>

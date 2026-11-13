@@ -1,46 +1,75 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { downloadAndShare } from '@/lib/files';
 import { http } from '@/lib/http';
-import type { DiffSection } from './compare';
+import { machineKeys } from './api';
 import type { ConfigChange } from './records';
 
-/** Configuration snapshots, their diff and restore (Backend API Reference §4). */
+/** Configuration snapshots: list, take, known good, diff, export and restore. */
 
 const enc = encodeURIComponent;
-const list = <T extends z.ZodType>(item: T) =>
-  z.union([z.array(item), z.object({ items: z.array(item) }).transform((r) => r.items)]);
 
-const apiSnapshot = z
-  .object({
-    id: z.string(),
-    createdAt: z.string(),
-    label: z.string().nullish(),
-    note: z.string().nullish(),
-    reason: z.string().nullish(),
-    version: z.number().nullish(),
-    isKnownGood: z.boolean().nullish(),
-    createdBy: z.object({ name: z.string().nullish() }).loose().nullish(),
-  })
-  .loose();
+export const SNAPSHOT_TRIGGERS = [
+  'manual',
+  'scheduled',
+  'service',
+  'component_replaced',
+  'baseline',
+] as const;
+export type SnapshotTrigger = (typeof SNAPSHOT_TRIGGERS)[number];
+export const TRIGGER_LABEL: Record<SnapshotTrigger, string> = {
+  manual: 'Manual snapshot',
+  scheduled: 'Scheduled',
+  service: 'After a service',
+  component_replaced: 'Component replaced',
+  baseline: 'Baseline',
+};
+
+const snapshot = z.object({
+  id: z.string(),
+  takenAt: z.string(),
+  takenBy: z
+    .object({ id: z.string(), name: z.string(), avatarUrl: z.string().nullable().default(null) })
+    .nullable()
+    .default(null),
+  trigger: z.enum(SNAPSHOT_TRIGGERS).catch('manual'),
+  isKnownGood: z.boolean().default(false),
+});
+export type Snapshot = z.infer<typeof snapshot>;
+
+const diffRow = z.object({
+  kind: z.enum(['changed', 'added', 'removed']),
+  componentName: z.string(),
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+});
+export type SnapshotDiffRow = z.infer<typeof diffRow>;
+const snapshotDiff = z.object({
+  from: snapshot,
+  to: snapshot,
+  rows: z.array(diffRow).default([]),
+  unchanged: z
+    .array(z.object({ componentName: z.string(), value: z.string().nullable() }))
+    .default([]),
+});
+export type SnapshotDiff = z.infer<typeof snapshotDiff>;
 
 export const snapshotKeys = {
   list: (id: string) => ['machines', id, 'snapshots'] as const,
   diff: (id: string, from: string, to: string) => ['machines', id, 'snapshots', from, to] as const,
 };
 
-export function toConfigChange(
-  s: z.infer<typeof apiSnapshot>,
-): ConfigChange & { knownGood: boolean } {
+/** For the Configuration tab preview on machine detail. */
+export function toConfigChange(s: Snapshot): ConfigChange {
   return {
     id: s.id,
-    kind: 'firmware',
-    title: s.label || s.note || s.reason || (s.version ? `Snapshot v${s.version}` : 'Snapshot'),
-    detail: [s.isKnownGood ? 'Known good' : '', s.createdBy?.name ? `by ${s.createdBy.name}` : '']
+    kind: s.trigger === 'component_replaced' ? 'partSwap' : 'firmware',
+    title: TRIGGER_LABEL[s.trigger],
+    detail: [s.isKnownGood ? 'Known good' : '', s.takenBy?.name ?? 'System']
       .filter(Boolean)
       .join(' · '),
-    at: s.createdAt,
-    knownGood: !!s.isKnownGood,
+    at: s.takenAt,
   };
 }
 
@@ -50,79 +79,59 @@ export function useSnapshots(id: string | undefined) {
     queryKey: snapshotKeys.list(id ?? ''),
     enabled: !!id,
     queryFn: async () =>
-      list(apiSnapshot)
+      z
+        .array(snapshot)
         .parse(await http.get(`/machines/${enc(id!)}/snapshots`))
-        .map(toConfigChange)
-        .sort((a, b) => b.at.localeCompare(a.at)),
+        .sort((a, b) => b.takenAt.localeCompare(a.takenAt)),
   });
 }
 
-const value = z.union([z.string(), z.number()]).nullish();
-const diffRow = z
-  .object({
-    kind: z.string().nullish(),
-    systemName: z.string().nullish(),
-    componentName: z.string().nullish(),
-    before: z.unknown().optional(),
-    after: z.unknown().optional(),
-    fields: z.array(z.object({ field: z.string(), before: value, after: value })).default([]),
-  })
-  .loose();
-
-const FIELD: Record<string, string> = {
-  serialNumber: 'Serial no.',
-  firmwareVersion: 'Firmware',
-  softwareVersion: 'Software',
-};
-const str = (v: unknown) => (v === null || v === undefined || v === '' ? undefined : String(v));
-
-/** One section per changed component; added / removed components get a single row. */
-export function toDiffSections(rows: z.infer<typeof diffRow>[]): DiffSection[] {
-  return rows.map((r) => {
-    const title = [r.systemName, r.componentName].filter(Boolean).join(' · ') || 'Change';
-    if (r.fields.length) {
-      return {
-        title,
-        rows: r.fields.map((f) => ({
-          field: FIELD[f.field] ?? f.field,
-          before: str(f.before),
-          after: str(f.after),
-        })),
-      };
-    }
-    const added = r.kind === 'added' || (!r.before && !!r.after);
-    return {
-      title,
-      rows: [
-        {
-          field: added ? 'Added' : 'Removed',
-          ...(added ? { after: 'Installed' } : { before: 'Installed' }),
-        },
-      ],
-    };
-  });
+/** Older snapshot first, whichever order they were picked in. */
+export function orderPair(snapshots: Snapshot[], a: string, b: string): [string, string] {
+  const at = (id: string) => snapshots.find((s) => s.id === id)?.takenAt ?? '';
+  return at(a) <= at(b) ? [a, b] : [b, a];
 }
 
-/** Field-level diff of two snapshots, older → newer. */
-export function useSnapshotDiff(id: string | undefined, from: string, to: string) {
+export function useSnapshotDiff(id: string, from: string, to: string) {
   return useQuery({
-    queryKey: snapshotKeys.diff(id ?? '', from, to),
-    enabled: !!id && !!from && !!to && from !== to,
+    queryKey: snapshotKeys.diff(id, from, to),
+    enabled: !!from && !!to && from !== to,
     queryFn: async () =>
-      toDiffSections(
-        list(diffRow).parse(
-          await http.get(`/machines/${enc(id!)}/snapshots/compare`, { query: { from, to } }),
-        ),
+      snapshotDiff.parse(
+        await http.get(`/machines/${enc(id)}/snapshots/diff`, { query: { from, to } }),
       ),
   });
 }
 
-/** Restores recorded serial / firmware / software to a snapshot (needs `machine.manage`). */
-export function useRestoreSnapshot(id: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (snapshotId: string) =>
-      http.post(`/machines/${enc(id)}/snapshots/${enc(snapshotId)}/restore`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['machines', id] }),
+/** Downloads the diff as CSV or PDF (with the auth header) and opens the share sheet. */
+export function exportSnapshotDiff(id: string, from: string, to: string, format: 'csv' | 'pdf') {
+  const query = new URLSearchParams({ from, to, format }).toString();
+  return downloadAndShare(`/machines/${enc(id)}/snapshots/diff/export?${query}`, {
+    auth: true,
+    mimeType: format === 'pdf' ? 'application/pdf' : 'text/csv',
   });
+}
+
+/** Take snapshot, mark known good and restore; each reloads the list (restore: components too). */
+export function useSnapshotActions(id: string) {
+  const client = useQueryClient();
+  const reload = () => client.invalidateQueries({ queryKey: snapshotKeys.list(id) });
+  return {
+    take: useMutation({
+      mutationFn: () => http.post(`/machines/${enc(id)}/snapshots`, undefined, { retry: false }),
+      onSettled: reload,
+    }),
+    knownGood: useMutation({
+      mutationFn: ({ snapshotId, isKnownGood }: { snapshotId: string; isKnownGood: boolean }) =>
+        http.patch(`/machines/${enc(id)}/snapshots/${enc(snapshotId)}`, { isKnownGood }),
+      onSettled: reload,
+    }),
+    restore: useMutation({
+      mutationFn: (snapshotId: string) =>
+        http.post(`/machines/${enc(id)}/snapshots/${enc(snapshotId)}/restore`, undefined, {
+          retry: false,
+        }),
+      onSettled: () => client.invalidateQueries({ queryKey: machineKeys.one(id) }),
+    }),
+  };
 }

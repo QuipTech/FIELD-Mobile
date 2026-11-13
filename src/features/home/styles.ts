@@ -97,6 +97,11 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
+  // Fleet uptime: figures left, sparkline right, one compact row.
+  uptime: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12 },
+  uptimeText: { gap: 1 },
+  uptimeValue: { fontFamily: fontFamily.semibold, fontSize: 22, lineHeight: 27, color: colors.ink },
+  uptimeChart: { flex: 1 },
   baselineRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionTitle: { fontFamily: fontFamily.medium, fontSize: 16, lineHeight: 22 },
   iconBox: {
@@ -110,8 +115,25 @@ export const styles = StyleSheet.create({
 
   // Admin KPI tiles (2×2)
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpi: { flexBasis: '47%', flexGrow: 1, minHeight: 72, gap: 2 },
-  kpiValue: { fontFamily: fontFamily.medium, fontSize: 28, lineHeight: 32 },
+  kpi: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    minHeight: 108,
+    padding: 16,
+    borderRadius: 20,
+    gap: 12,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  kpiLabel: {
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    paddingTop: 10,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  kpiTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  kpiValue: { fontFamily: fontFamily.semibold, fontSize: 30, lineHeight: 36 },
 
   tag: { borderWidth: 1, borderRadius: 6, paddingHorizontal: spacing.xs, paddingVertical: 3 },
   sampleNote: { textAlign: 'center' },

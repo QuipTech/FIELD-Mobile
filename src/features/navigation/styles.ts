@@ -10,7 +10,14 @@ export const AI_LIFT = 26;
 
 export const useStyles = makeStyles((c) => ({
   // Screen-coloured strip the floating bar sits on.
-  backdrop: { backgroundColor: c.bg, paddingHorizontal: 16, paddingTop: AI_LIFT - 6 },
+  backdrop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: AI_LIFT - 6,
+  },
   bar: {
     flexDirection: 'row',
     padding: BAR_PADDING,

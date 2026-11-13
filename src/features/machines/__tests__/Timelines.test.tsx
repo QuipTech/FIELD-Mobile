@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { HT_2201_RECORDS } from '@/test/fixtures/machines/records';
 import { MachineManuals } from '../Manuals';
-import { ConfigurationTimeline, MachineTimeline } from '../Timelines';
+import { MachineTimeline } from '../Timelines';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -63,22 +63,6 @@ describe('MachineTimeline', () => {
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Export' }));
     expect(onExport).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('ConfigurationTimeline', () => {
-  it('hides restore from technicians', async () => {
-    await renderScreen(<ConfigurationTimeline changes={RECORDS.configuration} />);
-    expect(screen.queryByRole('button', { name: 'Restore a snapshot' })).toBeNull();
-  });
-
-  it('offers restore to admins', async () => {
-    const onRestore = jest.fn();
-    await renderScreen(
-      <ConfigurationTimeline changes={RECORDS.configuration} onRestore={onRestore} />,
-    );
-    await fireEvent.press(screen.getByRole('button', { name: 'Restore a snapshot' }));
-    expect(onRestore).toHaveBeenCalledTimes(1);
   });
 });
 

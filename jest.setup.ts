@@ -47,6 +47,14 @@ jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn(async () => ({ type: 'cancel' })),
 }));
 
+// Stripe's Payment Sheet is native only; tests drive what the sheet returns.
+jest.mock('@stripe/stripe-react-native', () => ({
+  initStripe: jest.fn(async () => undefined),
+  initPaymentSheet: jest.fn(async () => ({})),
+  presentPaymentSheet: jest.fn(async () => ({})),
+  PaymentSheetError: { Canceled: 'Canceled', Failed: 'Failed', Timeout: 'Timeout' },
+}));
+
 // Text-to-speech is native only.
 jest.mock('expo-speech', () => ({
   maxSpeechInputLength: 4000,

@@ -6,7 +6,13 @@ import { AppState } from 'react-native';
 import { toast } from '@/components/Toast/store';
 import { http } from '@/lib/http';
 import type { BillingAddress } from './address';
-import { openDocument, openStripePage, RETURN_TO_APP, type StripeReturn } from './stripeBrowser';
+import {
+  openDocument,
+  openHostedPage,
+  openStripePage,
+  RETURN_TO_APP,
+  type StripeReturn,
+} from './stripeBrowser';
 import {
   billingKeys,
   paymentResponse,
@@ -97,10 +103,10 @@ export function usePayInvoice(scope: Scope) {
     mutationFn: async (invoice: InvoiceItem) => {
       if (!invoice.payUrl) return;
       try {
-        await openStripePage(invoice.payUrl);
+        await openHostedPage(invoice.payUrl);
       } finally {
         if (scope === 'personal') await confirmPayment(client);
-        else await client.invalidateQueries({ queryKey: billingKeys.organisation });
+        else await client.invalidateQueries({ queryKey: billingKeys.all });
       }
     },
   });

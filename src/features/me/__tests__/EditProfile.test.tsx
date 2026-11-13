@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -6,8 +6,21 @@ import { toast } from '@/components';
 import { EditProfile } from '../EditProfile';
 
 const mockMutate = jest.fn();
-jest.mock('../api', () => ({ useUpdateProfile: () => ({ mutate: mockMutate, isPending: false }) }));
-jest.mock('@/auth/access', () => ({ useAccess: () => null }));
+const mockUpload = jest.fn();
+let mockProfile: {
+  phoneNumber: string | null;
+  tenant: { id: string; name: string } | null;
+} | null = null;
+jest.mock('../api', () => ({
+  useUpdateProfile: () => ({ mutate: mockMutate, isPending: false }),
+  useUploadAvatar: () => ({ mutate: mockUpload, isPending: false }),
+}));
+jest.mock('@/auth/access', () => ({
+  useAccess: (select: (s: { profile: typeof mockProfile }) => unknown) =>
+    select({ profile: mockProfile }),
+}));
+const mockPick = jest.fn();
+jest.mock('../pickAvatar', () => ({ pickAvatar: () => mockPick() }));
 jest.mock('@/auth/useCurrentUser', () => ({
   useCurrentUser: () => ({
     data: { id: 'u1', firstName: 'Jo', lastName: 'Okoye', email: 'jo@example.com' },
@@ -27,7 +40,41 @@ const setup = () =>
     </SafeAreaProvider>,
   );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockProfile = null;
+});
+
+it('uploads a picked photo straight away', async () => {
+  const file = { uri: 'file:///a.jpg', name: 'a.jpg', type: 'image/jpeg' };
+  mockPick.mockResolvedValue(file);
+  await setup();
+  await fireEvent.press(screen.getByRole('button', { name: 'Change profile photo' }));
+  await waitFor(() => expect(mockUpload).toHaveBeenCalledWith(file, expect.any(Object)));
+});
+
+it('does nothing when picking a photo is cancelled', async () => {
+  mockPick.mockResolvedValue(null);
+  await setup();
+  await fireEvent.press(screen.getByRole('button', { name: 'Change profile photo' }));
+  await waitFor(() => expect(mockPick).toHaveBeenCalled());
+  expect(mockUpload).not.toHaveBeenCalled();
+});
+
+it('saves a changed phone number and shows the company read-only', async () => {
+  mockProfile = { phoneNumber: '0400 000 000', tenant: { id: 't1', name: 'Acme Mining' } };
+  await setup();
+  expect(screen.getByLabelText('Company')).toHaveProp('value', 'Acme Mining');
+  expect(screen.getByLabelText('Company')).toHaveProp('editable', false);
+  await fireEvent.changeText(screen.getByLabelText('Phone'), '');
+  expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  await fireEvent.changeText(screen.getByLabelText('Phone'), ' 0411 111 111 ');
+  await fireEvent.press(screen.getByRole('button', { name: 'Save changes' }));
+  expect(mockMutate).toHaveBeenCalledWith(
+    { firstName: 'Jo', lastName: 'Okoye', phoneNumber: '0411 111 111' },
+    expect.any(Object),
+  );
+});
 
 it('prevents unchanged and blank names from being saved', async () => {
   await setup();

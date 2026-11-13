@@ -19,10 +19,28 @@ export type Machine = MachineRef & {
   /** Engine hours. */
   hours?: number;
   serial: string;
+  /** Catalogue model id (the Knowledge `model` filter); missing on older APIs. */
+  modelId?: string;
+  /** Plant ID / asset number, the customer's own fleet number. */
+  plantId?: string;
   /** Cover photo (a signed URL that lasts 15 minutes). */
   photoUrl?: string;
   /** From machine detail; undefined in list rows. */
   technicianCount?: number;
+  /** Registered (added, not yet activated), active, archived or sold. Undefined on older APIs. */
+  lifecycle?: MachineLifecycle;
+  /** Machine groups it belongs to (shown as coloured tags). */
+  groups?: { id: string; name: string; colour: string | null }[];
+};
+
+export type MachineLifecycle = 'registered' | 'active' | 'archived' | 'sold';
+
+/** How each lifecycle state shows on a machine's thumbnail and row. */
+export const LIFECYCLE: Record<MachineLifecycle, { label: string; dot: string; tag?: PillTone }> = {
+  active: { label: 'Active', dot: colors.success },
+  registered: { label: 'Not activated', dot: colors.amber, tag: 'amber' },
+  archived: { label: 'Archived', dot: colors.inkSubtle, tag: 'muted' },
+  sold: { label: 'Sold', dot: colors.inkSubtle, tag: 'muted' },
 };
 
 export const MACHINE_STATUS: Record<
@@ -31,7 +49,7 @@ export const MACHINE_STATUS: Record<
 > = {
   down: { label: 'Down', tone: 'danger', fg: colors.danger, bg: colors.dangerTint },
   due: { label: 'Due', tone: 'amber', fg: colors.amber, bg: colors.amberTint },
-  ok: { label: 'Running', tone: 'neutral', fg: colors.inkMuted, bg: colors.fill },
+  ok: { label: 'Running', tone: 'success', fg: colors.success, bg: colors.successBg },
 };
 
 /** Case-insensitive match on fleet number, make/model, site, bench and serial. */

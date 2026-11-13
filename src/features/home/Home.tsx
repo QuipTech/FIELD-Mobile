@@ -6,10 +6,13 @@ import { SkeletonList } from '@/components/Skeleton/SkeletonList';
 import { Text } from '@/components/Text/Text';
 import type { SupportCase } from '@/features/cases/data';
 import { KpiGrid, OpenCasesCard, TeamActivityCard } from './AdminCards';
+import { IngestionQueueCard, LatestActionsCard, OverviewStats } from './AdminOverview';
 import type { AdminHomeData, AdminKpiKey } from './adminData';
 import { AssignedCard, RecentCard, UptimeCard } from './Cards';
 import type { HomeData } from './data';
 import { HomeHeader } from './HomeHeader';
+import { HomeStatsRow } from './HomeStats';
+import { scopeLine, type AdminOverview } from './overviewData';
 import { QuickActions, type QuickActionsProps } from './QuickActions';
 import { styles } from './styles';
 
@@ -21,6 +24,9 @@ export type HomeProps = QuickActionsProps & {
   isAdmin?: boolean;
   /** Admin-only data; ignored for customers. */
   admin?: AdminHomeData;
+  /** Admin Overview (`GET /admin/overview`); absent when the account can't read it. */
+  overview?: AdminOverview;
+  onOpenAuditLog?: () => void;
   /** The customer's open cases. */
   openCases?: SupportCase[];
   /** Undefined while the dashboard loads, or when it failed with nothing cached. */
@@ -48,15 +54,22 @@ const noop = () => {};
 
 /**
  * M2 / H1 Home. The quick actions work straight away; the cards fill in from GET /dashboard.
- * Admins see fleet KPIs above the actions and team activity in place of "My machines".
+ * Scan leads for everyone. Admins then get the platform Overview and what needs attention
+ * instead of "My machines".
  */
-export function Home({ data, error, onRetry, bottomInset, isAdmin, admin, ...props }: HomeProps) {
+export function Home({ data, error, onRetry, bottomInset, isAdmin, ...props }: HomeProps) {
+  // Admins don't need "Pit 4 · 4 machines": show what they oversee instead.
+  const subtitle = isAdmin
+    ? (props.overview && scopeLine(props.overview)) || 'Administrator'
+    : data
+      ? machinesLine(data)
+      : ' ';
   return (
     <View style={styles.root}>
       <MeshBackground spots={APP_MESH} />
       <HomeHeader
         title={props.title}
-        subtitle={data ? machinesLine(data) : ' '}
+        subtitle={subtitle}
         initials={props.initials}
         avatarUrl={props.avatarUrl}
         onNotifications={props.onNotifications}
@@ -64,10 +77,20 @@ export function Home({ data, error, onRetry, bottomInset, isAdmin, admin, ...pro
         onProfile={props.onProfile}
       />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}>
-        {isAdmin && admin && <KpiGrid kpis={admin.kpis} onOpen={props.onOpenKpi ?? noop} />}
-        <QuickActions {...props} />
-        {isAdmin && admin ? (
-          <TeamActivityCard items={admin.team} />
+        <QuickActions
+          {...props}
+          belowSearch={
+            !isAdmin && data?.stats ? (
+              <HomeStatsRow
+                stats={data.stats}
+                onOpenCases={props.onSeeAllCases ?? noop}
+                onOpenMachines={props.onSeeAll}
+              />
+            ) : undefined
+          }
+        />
+        {isAdmin ? (
+          <AdminSections {...props} />
         ) : data ? (
           <Cards data={data} {...props} />
         ) : error ? (
@@ -77,6 +100,30 @@ export function Home({ data, error, onRetry, bottomInset, isAdmin, admin, ...pro
         )}
       </ScrollView>
     </View>
+  );
+}
+
+/** Admin H1: platform totals, what needs attention, the ingestion queue and recent admin changes. */
+function AdminSections({
+  admin,
+  overview,
+  onOpenKpi = noop,
+  onOpenAuditLog,
+}: Pick<HomeProps, 'admin' | 'overview' | 'onOpenKpi' | 'onOpenAuditLog'>) {
+  if (!admin && !overview) return <SkeletonList rows={3} />;
+  return (
+    <>
+      {overview && <OverviewStats overview={overview} />}
+      {admin && <KpiGrid kpis={admin.kpis} onOpen={onOpenKpi} />}
+      {overview ? (
+        <>
+          <IngestionQueueCard entries={overview.ingestionQueue} />
+          <LatestActionsCard actions={overview.latestActions} onSeeAll={onOpenAuditLog} />
+        </>
+      ) : (
+        admin && <TeamActivityCard items={admin.team} />
+      )}
+    </>
   );
 }
 
