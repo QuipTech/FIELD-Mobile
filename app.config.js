@@ -50,11 +50,11 @@ const APP_VERSION = '1.0.0';
 const FACE_ID_PERMISSION = 'Allow $(PRODUCT_NAME) to use Face ID to sign you in.';
 /**
  * How technicians pay their personal monthly fee. 'in-app' opens the Stripe invoice in an in-app
- * browser; 'web' shows the status only and asks them to pay on the web portal. iOS stays on 'web'
- * until the App Store question is settled: Apple may require in-app purchase for a personal
- * subscription paid inside the app (organisation billing is fine).
+ * browser; 'web' shows the status only and asks them to pay on the web portal. iOS uses 'in-app'
+ * too, but Apple may require in-app purchase for a personal subscription paid inside the app
+ * (organisation billing is fine): switch iOS back to 'web' if App Review rejects it.
  */
-const PERSONAL_CHECKOUT = { ios: 'web', android: 'in-app' };
+const PERSONAL_CHECKOUT = { ios: 'in-app', android: 'in-app' };
 const MICROPHONE_PERMISSION =
   'Allow $(PRODUCT_NAME) to use the microphone so you can ask AI by voice.';
 
