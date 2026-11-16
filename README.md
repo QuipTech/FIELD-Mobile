@@ -13,12 +13,15 @@ cp .env.example .env        # optional overrides
 Environment is chosen by `APP_ENV` (`development` | `staging` | `production`) and resolved in
 [`app.config.js`](app.config.js) → `extra`, validated at startup by [`src/lib/env.ts`](src/lib/env.ts).
 
-| Setting               | Staging value                                                             |
-| --------------------- | ------------------------------------------------------------------------- |
-| API base URL          | `https://staging-api.quiptechfield.com.au`                                |
-| Cognito region / pool | `ap-southeast-2` / `ap-southeast-2_bxjA9dw2z`                             |
-| App client            | `7k0eurkl5j7fngo2kiuplj0jq6`                                              |
-| Hosted UI             | `ap-southeast-2bxja9dw2z.auth.ap-southeast-2.amazoncognito.com`           |
+`development` and `staging` builds use the staging values; `production` uses the production values.
+
+| Setting               | Staging                                                                   | Production                                             |
+| --------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| API base URL          | `https://staging-api.quiptechfield.com.au`                                | `https://app-api.quiptechfield.com.au`                 |
+| Web portal            | `https://staging.quiptechfield.com.au`                                    | `https://app.quiptechfield.com.au`                     |
+| Cognito region / pool | `ap-southeast-2` / `ap-southeast-2_bxjA9dw2z`                             | `ap-southeast-2` / `ap-southeast-2_wKANhY7Gj`          |
+| App client            | `7k0eurkl5j7fngo2kiuplj0jq6`                                              | `1jdchvunhr03hl5pll13od20k0`                           |
+| Hosted UI             | `ap-southeast-2bxja9dw2z.auth.ap-southeast-2.amazoncognito.com`           | `quiptech-field.auth.ap-southeast-2.amazoncognito.com` |
 | OAuth redirect        | `quiptechfield://auth/callback` (sign-out `quiptechfield://auth/signout`) |
 
 ## Run

@@ -1,34 +1,9 @@
 // Plain JS (not TS) so every tool — including EAS CLI on Node 20 — can load it.
 const fs = require('fs');
 
-/** @typedef {'development' | 'staging' | 'production'} AppEnv */
-/**
- * @typedef {{ apiBaseUrl: string, wsUrl: string, webUrl: string, cognito: { region: string, userPoolId: string,
- *   userPoolClientId: string, hostedUiDomain: string } }} EnvConfig
- */
+const { ENVIRONMENTS } = require('./app.environments');
 
-// Cognito IDs and API URLs are public client config, not secrets.
-/** @type {EnvConfig} */
-const STAGING = {
-  apiBaseUrl: 'https://staging-api.quiptechfield.com.au',
-  wsUrl: '',
-  // Web portal: shared links point here and open the app via Universal Links / App Links.
-  webUrl: 'https://staging.quiptechfield.com.au',
-  cognito: {
-    region: 'ap-southeast-2',
-    userPoolId: 'ap-southeast-2_bxjA9dw2z',
-    userPoolClientId: '7k0eurkl5j7fngo2kiuplj0jq6',
-    hostedUiDomain: 'ap-southeast-2bxja9dw2z.auth.ap-southeast-2.amazoncognito.com',
-  },
-};
-
-/** @type {Record<AppEnv, EnvConfig>} */
-const ENVIRONMENTS = {
-  development: STAGING,
-  staging: STAGING,
-  // Deliberately staging: every build, including production, talks to the staging API.
-  production: STAGING,
-};
+/** @typedef {import('./app.environments').AppEnv} AppEnv */
 
 const SUPPORT_LINKS = {
   privacyPolicy:
