@@ -85,14 +85,19 @@ function resolveEnv() {
   return value === 'staging' || value === 'production' ? value : 'development';
 }
 
+/** Android package / app name suffix per environment, so all three can sit on one device. */
+const VARIANTS = {
+  development: { suffix: '.dev', nameSuffix: ' (Dev)' },
+  staging: { suffix: '.staging', nameSuffix: ' (Staging)' },
+  production: { suffix: '', nameSuffix: '' },
+};
+
 /** @param {import('expo/config').ConfigContext} ctx @returns {import('expo/config').ExpoConfig} */
 module.exports = ({ config }) => {
   const appEnv = resolveEnv();
   const env = ENVIRONMENTS[appEnv];
-  const suffix = appEnv === 'production' ? '' : `.${appEnv === 'development' ? 'dev' : 'staging'}`;
+  const { suffix, nameSuffix } = VARIANTS[appEnv];
   const webHost = new URL(env.webUrl).host;
-  const nameSuffix =
-    appEnv === 'production' ? '' : ` (${appEnv === 'development' ? 'Dev' : 'Staging'})`;
 
   return {
     ...config,
@@ -110,8 +115,9 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: `${IOS_BASE_ID}`,
       usesAppleSignIn: true,
-      // Needs public/.well-known/apple-app-site-association on the portal (see src/lib/links.ts).
+      // Portal serves /.well-known/apple-app-site-association (FIELD-Portal app/.well-known).
       associatedDomains: [`applinks:${webHost}`],
+      infoPlist: { ITSAppUsesNonExemptEncryption: false }, // HTTPS/TLS only, which is exempt
     },
     android: {
       package: `${BASE_ID}${suffix}`,
