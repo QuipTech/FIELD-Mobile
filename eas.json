@@ -23,6 +23,12 @@
       "channel": "production",
       "autoIncrement": true,
       "env": { "APP_ENV": "production" }
+    },
+    "production-apk": {
+      "extends": "production",
+      "environment": "production",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
     }
   },
   "submit": {
